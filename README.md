@@ -1,2 +1,2 @@
 # sacunxt-charts
-SacuNXT Helm Charts
+SacuNXT Helm Chart
