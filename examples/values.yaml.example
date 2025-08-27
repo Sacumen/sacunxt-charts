@@ -2,66 +2,29 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+# Global configuration
 global:
-  # Global image registry settings
   imageRegistry: "your-registry.example.com"
   imagePullPolicy: Always
-  imagePullSecrets: []
-  
-  # ECR configuration
-  createECRSecret: true
-  ecrToken: ""
-  
-  # Global environment settings
-  timezone: "Asia/Kolkata"
-  
-  # Storage class for persistent volumes
-  storageClass: "gp2"
-
-# Namespace configuration
-namespaceOverride: ""
-
-# Service Account
-serviceAccount:
-  # Specifies whether a service account should be created
-  create: true
-  # Annotations to add to the service account
-  annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
-  name: ""
-
-# Image credentials for private registries
-imageCredentials:
-  registry: "your-registry.example.com"
-  username: "your-username"
-  password: ""
-  email: "admin@example.com"
-
-# PostgreSQL Database Configuration
+  storageClass: "default"
+# Common labels
+commonLabels:
+  app.kubernetes.io/name: sacunxt
+  app.kubernetes.io/instance: sacunxt
+  app.kubernetes.io/version: "1.0.0"
+  app.kubernetes.io/managed-by: helm
+# Database configuration
 postgresql:
   enabled: true
-  image:
-    registry: ""
-    repository: "postgres"
-    tag: "15-alpine"
-    pullPolicy: IfNotPresent
-  
   auth:
-    enablePostgresUser: true
-    postgresPassword: "sacunxt_password"
     username: "sacunxt"
     password: "sacunxt_password"
     database: "api_service"
-  
   primary:
     persistence:
       enabled: true
-      storageClass: "gp2"
-      accessModes:
-        - ReadWriteOnce
+      storageClass: "default"
       size: 5Gi
-    
     resources:
       requests:
         memory: "256Mi"
@@ -69,25 +32,17 @@ postgresql:
       limits:
         memory: "512Mi"
         cpu: "500m"
-    
-    service:
-      type: ClusterIP
-      ports:
-        postgresql: 5432
-
-# Redis Configuration
+  service:
+    ports:
+      postgresql: 5432
+# Redis configuration
 redis:
   enabled: true
-  image:
-    registry: ""
-    repository: "redis"
-    tag: "7-alpine"
-    pullPolicy: IfNotPresent
-  
+  auth:
+    enabled: false
   master:
     persistence:
       enabled: false
-    
     resources:
       requests:
         memory: "128Mi"
@@ -95,31 +50,20 @@ redis:
       limits:
         memory: "256Mi"
         cpu: "200m"
-    
-    service:
-      type: ClusterIP
-      ports:
-        redis: 6379
-
-# Kafka Configuration
+  service:
+    ports:
+      redis: 6379
+# Kafka configuration
 kafka:
   enabled: true
-  
+  replicaCount: 1
   zookeeper:
     enabled: true
-    image:
-      registry: ""
-      repository: "wurstmeister/zookeeper"
-      tag: "latest"
-      pullPolicy: IfNotPresent
-    
+    replicaCount: 1
     persistence:
       enabled: true
-      storageClass: "gp2"
-      accessModes:
-        - ReadWriteOnce
+      storageClass: "default"
       size: 5Gi
-    
     resources:
       requests:
         memory: "256Mi"
@@ -127,27 +71,10 @@ kafka:
       limits:
         memory: "512Mi"
         cpu: "400m"
-    
-    service:
-      type: ClusterIP
-      ports:
-        client: 2181
-        server: 2888
-        election: 3888
-  
-  image:
-    registry: ""
-    repository: "wurstmeister/kafka"
-    tag: "latest"
-    pullPolicy: IfNotPresent
-  
   persistence:
     enabled: true
-    storageClass: "gp2"
-    accessModes:
-      - ReadWriteOnce
+    storageClass: "default"
     size: 20Gi
-  
   resources:
     requests:
       memory: "512Mi"
@@ -155,38 +82,36 @@ kafka:
     limits:
       memory: "1Gi"
       cpu: "600m"
-  
   service:
-    type: ClusterIP
     ports:
-      kafka: 9092
-  
-  config:
-    defaultReplicationFactor: 1
-    minInsyncReplicas: 1
-    numPartitions: 3
-    offsetsTopicReplicationFactor: 1
-    transactionStateLogReplicationFactor: 1
-    transactionStateLogMinIsr: 1
-    logRetentionHours: 168
-    logRetentionBytes: 1073741824
-    messageMaxBytes: 20971520
-
+      client: 9092
+  config: |
+    auto.create.topics.enable=true
+    delete.topic.enable=true
+    default.replication.factor=1
+    min.insync.replicas=1
+    num.partitions=3
+    offsets.topic.replication.factor=1
+    transaction.state.log.replication.factor=1
+    transaction.state.log.min.isr=1
+    log.retention.hours=168
+    log.retention.bytes=1073741824
+    log.segment.bytes=1073741824
+    message.max.bytes=20971520
+    replica.fetch.max.bytes=20971520
+    compression.type=producer
+    log.cleanup.policy=delete
 # API Service Configuration
 apiService:
   enabled: true
   replicaCount: 1
-  
   image:
-    repository: "sacunxt/api-service"
-    tag: "latest"
-    pullPolicy: Always
-  
+    repository: sacunxt/api-service
+    tag: 2.1.0
   service:
     type: ClusterIP
     port: 8000
     targetPort: 8000
-  
   resources:
     requests:
       memory: "256Mi"
@@ -194,7 +119,6 @@ apiService:
     limits:
       memory: "512Mi"
       cpu: "500m"
-  
   env:
     STATUS: "http://scheduler-service:8002/scheduler/status"
     DB_HOST: "postgres-service.database.svc.cluster.local"
@@ -202,40 +126,17 @@ apiService:
     DB_USER: "sacunxt"
     DB_PASSWORD: "sacunxt_password"
     PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
-  
-  livenessProbe:
-    httpGet:
-      path: /health
-      port: 8000
-    initialDelaySeconds: 30
-    periodSeconds: 10
-    timeoutSeconds: 5
-    failureThreshold: 3
-  
-  readinessProbe:
-    httpGet:
-      path: /ready
-      port: 8000
-    initialDelaySeconds: 10
-    periodSeconds: 5
-    timeoutSeconds: 3
-    failureThreshold: 3
-
 # Scheduler Service Configuration
 schedulerService:
   enabled: true
   replicaCount: 1
-  
   image:
-    repository: "sacunxt/scheduler-service"
-    tag: "latest"
-    pullPolicy: Always
-  
+    repository: sacunxt/scheduler-service
+    tag: 2.1.0
   service:
     type: ClusterIP
     port: 8002
     targetPort: 8002
-  
   resources:
     requests:
       memory: "256Mi"
@@ -243,7 +144,6 @@ schedulerService:
     limits:
       memory: "512Mi"
       cpu: "500m"
-  
   env:
     REDIS_HOST: "redis"
     REDIS_PORT: "6379"
@@ -255,40 +155,17 @@ schedulerService:
     DB_PORT: "5432"
     DB_USER: "sacunxt"
     DB_PASSWORD: "sacunxt_password"
-  
-  livenessProbe:
-    httpGet:
-      path: /scheduler/status
-      port: 8002
-    initialDelaySeconds: 30
-    periodSeconds: 10
-    timeoutSeconds: 5
-    failureThreshold: 3
-  
-  readinessProbe:
-    httpGet:
-      path: /scheduler/status
-      port: 8002
-    initialDelaySeconds: 10
-    periodSeconds: 5
-    timeoutSeconds: 3
-    failureThreshold: 3
-
 # Config Service Configuration
 configService:
   enabled: true
   replicaCount: 1
-  
   image:
-    repository: "sacunxt/config-service"
-    tag: "latest"
-    pullPolicy: Always
-  
+    repository: sacunxt/config-service
+    tag: 2.1.0
   service:
     type: ClusterIP
     port: 80
     targetPort: 8080
-  
   resources:
     requests:
       memory: "256Mi"
@@ -296,7 +173,6 @@ configService:
     limits:
       memory: "512Mi"
       cpu: "500m"
-  
   env:
     REDIS_HOST: "redis"
     REDIS_PORT: "6379"
@@ -306,22 +182,17 @@ configService:
     DB_PORT: "5432"
     DB_USER: "sacunxt"
     DB_PASSWORD: "sacunxt_password"
-
 # Collector Service Configuration
 collectorService:
   enabled: true
   replicaCount: 1
-  
   image:
-    repository: "sacunxt/collector-service"
-    tag: "latest"
-    pullPolicy: Always
-  
+    repository: sacunxt/collector-service
+    tag: 2.1.0
   service:
     type: ClusterIP
     port: 80
     targetPort: 8080
-  
   resources:
     requests:
       memory: "256Mi"
@@ -329,7 +200,6 @@ collectorService:
     limits:
       memory: "512Mi"
       cpu: "500m"
-  
   env:
     REDIS_HOST: "redis"
     REDIS_PORT: "6379"
@@ -340,22 +210,17 @@ collectorService:
     DB_PORT: "5432"
     DB_USER: "sacunxt"
     DB_PASSWORD: "sacunxt_password"
-
 # Normalizer Service Configuration
 normalizerService:
   enabled: true
   replicaCount: 1
-  
   image:
-    repository: "sacunxt/normalizer-service"
-    tag: "latest"
-    pullPolicy: Always
-  
+    repository: sacunxt/normalizer-service
+    tag: 2.1.0
   service:
     type: ClusterIP
     port: 80
     targetPort: 8080
-  
   resources:
     requests:
       memory: "256Mi"
@@ -363,7 +228,6 @@ normalizerService:
     limits:
       memory: "512Mi"
       cpu: "500m"
-  
   env:
     REDIS_HOST: "redis"
     REDIS_PORT: "6379"
@@ -374,22 +238,17 @@ normalizerService:
     DB_PORT: "5432"
     DB_USER: "sacunxt"
     DB_PASSWORD: "sacunxt_password"
-
 # Publisher Service Configuration
 publisherService:
   enabled: true
   replicaCount: 1
-  
   image:
-    repository: "sacunxt/publisher-service"
-    tag: "latest"
-    pullPolicy: Always
-  
+    repository: sacunxt/publisher-service
+    tag: 2.1.0
   service:
     type: ClusterIP
     port: 80
     targetPort: 8080
-  
   resources:
     requests:
       memory: "256Mi"
@@ -397,7 +256,8 @@ publisherService:
     limits:
       memory: "512Mi"
       cpu: "500m"
-  
+  command: ["python", "run.py"]
+  workingDir: /app
   env:
     HOST: "redis"
     PORT: "6379"
@@ -407,22 +267,17 @@ publisherService:
     DB_PORT: "5432"
     DB_USER: "sacunxt"
     DB_PASSWORD: "sacunxt_password"
-
 # Action Service Configuration
 actionService:
   enabled: true
   replicaCount: 1
-  
   image:
-    repository: "sacunxt/action-service"
-    tag: "latest"
-    pullPolicy: Always
-  
+    repository: sacunxt/action-service
+    tag: 2.1.0
   service:
     type: ClusterIP
     port: 80
     targetPort: 8080
-  
   resources:
     requests:
       memory: "256Mi"
@@ -430,57 +285,8 @@ actionService:
     limits:
       memory: "512Mi"
       cpu: "500m"
-  
   env:
     CONSUMER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
-
-# Ingress Configuration
-ingress:
-  enabled: false
-  className: ""
-  annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
-  hosts:
-    - host: chart-example.local
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
-          backend:
-            service:
-              name: api-service
-              port:
-                number: 8000
-  tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
-
-  # Individual ingress configurations for services
-  apiService:
-    enabled: false
-    hosts:
-      - host: api.sacunxt.local
-        path: /
-        pathType: Prefix
-    annotations: {}
-
-  schedulerService:
-    enabled: false
-    hosts:
-      - host: scheduler.sacunxt.local
-        path: /
-        pathType: Prefix
-    annotations: {}
-
-  configService:
-    enabled: false
-    hosts:
-      - host: config.sacunxt.local
-        path: /
-        pathType: Prefix
-    annotations: {}
-
 # Autoscaling Configuration
 autoscaling:
   enabled: false
@@ -488,104 +294,40 @@ autoscaling:
   maxReplicas: 100
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
-
-# Pod Security Context
-podSecurityContext: {}
-  # fsGroup: 2000
-
-# Security Context
-securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
-
-# Node Selector
-nodeSelector: {}
-
-# Tolerations
-tolerations: []
-
-# Affinity
-affinity: {}
-
-# Pod Annotations
-podAnnotations: {}
-
-# Pod Labels
-podLabels: {}
-
+# ServiceMonitor for Prometheus monitoring
+serviceMonitor:
+  enabled: false
+  namespace: monitoring
+  interval: 30s
+  scrapeTimeout: 10s
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
 # Network Policies
 networkPolicy:
   enabled: false
-  ingress: []
-  egress: []
-
-# Resource Quotas
-resourceQuota:
-  enabled: false
-  hard:
-    requests.cpu: "4"
-    requests.memory: 8Gi
-    limits.cpu: "8"
-    limits.memory: 16Gi
-
-# Monitoring Configuration
-monitoring:
-  enabled: false
-  serviceMonitor:
-    enabled: false
-    namespace: monitoring
-    interval: 30s
-    scrapeTimeout: 10s
-
-# Logging Configuration
-logging:
-  enabled: false
-  level: INFO
-  format: json
-
-# Backup Configuration
-backup:
-  enabled: false
-  schedule: "0 2 * * *"
-  retention: "7d"
-
-# Environment-specific overrides
-environments:
-  development:
-    replicaCount: 1
-    resources:
-      requests:
-        memory: "128Mi"
-        cpu: "100m"
-      limits:
-        memory: "256Mi"
-        cpu: "200m"
-  
-  staging:
-    replicaCount: 2
-    resources:
-      requests:
-        memory: "256Mi"
-        cpu: "200m"
-      limits:
-        memory: "512Mi"
-        cpu: "500m"
-  
-  production:
-    replicaCount: 3
-    resources:
-      requests:
-        memory: "512Mi"
-        cpu: "500m"
-      limits:
-        memory: "1Gi"
-        cpu: "1000m"
-    autoscaling:
-      enabled: true
-      minReplicas: 3
-      maxReplicas: 10
-      targetCPUUtilizationPercentage: 70
+  policyTypes:
+    - Ingress
+    - Egress
+# Security Context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 2000
+# Pod Security Context
+podSecurityContext:
+  seccompProfile:
+    type: RuntimeDefault
+# Node Selector
+nodeSelector: {}
+# Tolerations
+tolerations: []
+# Affinity
+affinity: {}
+# Additional environment variables for all services
+extraEnvVars: []
+# Additional volumes for all services
+extraVolumes: []
+# Additional volume mounts for all services
+extraVolumeMounts: []

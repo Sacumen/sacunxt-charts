@@ -33,8 +33,7 @@ The SacuNXT Connector Framework consists of the following microservices:
 │           ├── microservices.yaml  # All microservice deployments
 │           ├── postgresql.yaml     # PostgreSQL deployment
 │           ├── redis.yaml          # Redis deployment
-│           ├── kafka.yaml          # Kafka and Zookeeper deployment
-│           └── ingress.yaml        # Ingress configuration
+│           └── kafka.yaml          # Kafka and Zookeeper deployment
 └── examples/
     └── values.yaml.example         # Example configuration file
 ```
@@ -79,7 +78,6 @@ Check deployment status:
 ```bash
 kubectl get pods
 kubectl get services
-kubectl get ingress
 ```
 
 ## ⚙️ Configuration
@@ -163,19 +161,6 @@ schedulerService:
     targetPort: 8002
 ```
 
-### Ingress Configuration
-
-Enable ingress for external access:
-```yaml
-ingress:
-  enabled: true
-  className: "nginx"
-  hosts:
-    - host: sacunxt.example.com
-      paths:
-        - path: /
-          pathType: Prefix
-```
 
 ### Persistent Storage
 
@@ -324,9 +309,9 @@ helm rollback sacunxt 1
 
 This chart is designed to work across different cloud providers:
 
-- **AWS EKS** - Use `gp2` storage class, ALB ingress
-- **Azure AKS** - Use `managed-premium` storage, Application Gateway
-- **Google GKE** - Use `ssd` storage, GCE ingress
+- **AWS EKS** - Use `gp2` storage class
+- **Azure AKS** - Use `managed-premium` storage
+- **Google GKE** - Use `ssd` storage
 - **On-premises** - Use local storage classes
 
 ## 📚 Advanced Configuration

@@ -2,8 +2,8 @@ apiVersion: v2
 name: sacunxt
 description: A Helm chart for SacuNXT Connector Framework - Complete microservices deployment
 type: application
-version: 0.1.0
-appVersion: "1.0.0"
+version: 2.1.0
+appVersion: "2.1.0"
 keywords:
   - sacunxt
   - connector
@@ -13,7 +13,7 @@ keywords:
   - redis
 home: https://sacumen.com
 sources:
-  - https://github.com/sacumen/sacunxt
+  - https://github.com/Sacumen/sacunxt-charts
 maintainers:
   - name: Sacumen Team
     email: suthan.natarajan@sacumen.com

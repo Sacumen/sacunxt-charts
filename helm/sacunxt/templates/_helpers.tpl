@@ -99,8 +99,10 @@ PostgreSQL host
 {{- else }}
 {{- printf "%s-postgresql" (include "sacunxt.fullname" .) }}
 {{- end }}
-{{- else }}
+{{- else if .Values.externalDatabase }}
 {{- .Values.externalDatabase.host }}
+{{- else }}
+{{- "localhost" }}
 {{- end }}
 {{- end }}
 
@@ -110,8 +112,10 @@ PostgreSQL port
 {{- define "sacunxt.postgresql.port" -}}
 {{- if .Values.postgresql.enabled }}
 {{- .Values.postgresql.service.ports.postgresql }}
-{{- else }}
+{{- else if .Values.externalDatabase }}
 {{- .Values.externalDatabase.port }}
+{{- else }}
+{{- "5432" }}
 {{- end }}
 {{- end }}
 
@@ -125,8 +129,10 @@ Redis host
 {{- else }}
 {{- printf "%s-redis-master" (include "sacunxt.fullname" .) }}
 {{- end }}
-{{- else }}
+{{- else if .Values.externalRedis }}
 {{- .Values.externalRedis.host }}
+{{- else }}
+{{- "localhost" }}
 {{- end }}
 {{- end }}
 
@@ -136,8 +142,10 @@ Redis port
 {{- define "sacunxt.redis.port" -}}
 {{- if .Values.redis.enabled }}
 {{- .Values.redis.service.ports.redis }}
-{{- else }}
+{{- else if .Values.externalRedis }}
 {{- .Values.externalRedis.port }}
+{{- else }}
+{{- "6379" }}
 {{- end }}
 {{- end }}
 
@@ -151,8 +159,10 @@ Kafka brokers
 {{- else }}
 {{- printf "%s-kafka:9092" (include "sacunxt.fullname" .) }}
 {{- end }}
-{{- else }}
+{{- else if .Values.externalKafka }}
 {{- .Values.externalKafka.brokers }}
+{{- else }}
+{{- "localhost:9092" }}
 {{- end }}
 {{- end }}
 
@@ -188,9 +198,11 @@ Create image registry URL
 Create full image name for a service
 */}}
 {{- define "sacunxt.image" -}}
-{{- $registry := include "sacunxt.imageRegistry" . }}
-{{- $repository := .repository }}
-{{- $tag := .tag | default "latest" }}
+{{- $root := index . 0 }}
+{{- $image := index . 1 }}
+{{- $registry := include "sacunxt.imageRegistry" $root }}
+{{- $repository := $image.repository }}
+{{- $tag := $image.tag | default "latest" }}
 {{- printf "%s/%s:%s" $registry $repository $tag }}
 {{- end }}
 
