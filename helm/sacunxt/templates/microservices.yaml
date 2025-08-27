@@ -1,0 +1,569 @@
+{{- if .Values.apiService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sacunxt.fullname" . }}-api-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "api-service") | nindent 4 }}
+spec:
+  replicas: {{ .Values.apiService.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "api-service") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "api-service") | nindent 8 }}
+    spec:
+      {{- include "sacunxt.podSecurityContext" . | nindent 6 }}
+      {{- include "sacunxt.imagePullSecrets" . | nindent 6 }}
+      {{- include "sacunxt.nodeSelector" . | nindent 6 }}
+      {{- include "sacunxt.tolerations" . | nindent 6 }}
+      {{- include "sacunxt.affinity" . | nindent 6 }}
+      containers:
+        - name: api-service
+          image: {{ include "sacunxt.image" .Values.apiService.image }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.apiService.service.targetPort }}
+              protocol: TCP
+          env:
+            {{- range $key, $value := .Values.apiService.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- include "sacunxt.commonEnv" . | nindent 12 }}
+          {{- with .Values.apiService.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          {{- with .Values.extraVolumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- include "sacunxt.securityContext" . | nindent 10 }}
+      {{- include "sacunxt.volumes" . | nindent 6 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "api-service") | nindent 4 }}
+spec:
+  type: {{ .Values.apiService.service.type }}
+  ports:
+    - port: {{ .Values.apiService.service.port }}
+      targetPort: {{ .Values.apiService.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "api-service") | nindent 4 }}
+{{- end }}
+---
+{{- if .Values.schedulerService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sacunxt.fullname" . }}-scheduler-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "scheduler-service") | nindent 4 }}
+spec:
+  replicas: {{ .Values.schedulerService.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "scheduler-service") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "scheduler-service") | nindent 8 }}
+    spec:
+      {{- include "sacunxt.podSecurityContext" . | nindent 6 }}
+      {{- include "sacunxt.imagePullSecrets" . | nindent 6 }}
+      {{- include "sacunxt.nodeSelector" . | nindent 6 }}
+      {{- include "sacunxt.tolerations" . | nindent 6 }}
+      {{- include "sacunxt.affinity" . | nindent 6 }}
+      containers:
+        - name: scheduler-service
+          image: {{ include "sacunxt.image" .Values.schedulerService.image }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.schedulerService.service.targetPort }}
+              protocol: TCP
+          env:
+            {{- range $key, $value := .Values.schedulerService.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- include "sacunxt.commonEnv" . | nindent 12 }}
+          {{- with .Values.schedulerService.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /scheduler/status
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /scheduler/status
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          {{- with .Values.extraVolumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- include "sacunxt.securityContext" . | nindent 10 }}
+      {{- include "sacunxt.volumes" . | nindent 6 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scheduler-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "scheduler-service") | nindent 4 }}
+spec:
+  type: {{ .Values.schedulerService.service.type }}
+  ports:
+    - port: {{ .Values.schedulerService.service.port }}
+      targetPort: {{ .Values.schedulerService.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "scheduler-service") | nindent 4 }}
+{{- end }}
+---
+{{- if .Values.configService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sacunxt.fullname" . }}-config-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "config-service") | nindent 4 }}
+spec:
+  replicas: {{ .Values.configService.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "config-service") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "config-service") | nindent 8 }}
+    spec:
+      {{- include "sacunxt.podSecurityContext" . | nindent 6 }}
+      {{- include "sacunxt.imagePullSecrets" . | nindent 6 }}
+      {{- include "sacunxt.nodeSelector" . | nindent 6 }}
+      {{- include "sacunxt.tolerations" . | nindent 6 }}
+      {{- include "sacunxt.affinity" . | nindent 6 }}
+      containers:
+        - name: config-service
+          image: {{ include "sacunxt.image" .Values.configService.image }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.configService.service.targetPort }}
+              protocol: TCP
+          env:
+            {{- range $key, $value := .Values.configService.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- include "sacunxt.commonEnv" . | nindent 12 }}
+          {{- with .Values.configService.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          {{- with .Values.extraVolumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- include "sacunxt.securityContext" . | nindent 10 }}
+      {{- include "sacunxt.volumes" . | nindent 6 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: config-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "config-service") | nindent 4 }}
+spec:
+  type: {{ .Values.configService.service.type }}
+  ports:
+    - port: {{ .Values.configService.service.port }}
+      targetPort: {{ .Values.configService.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "config-service") | nindent 4 }}
+{{- end }}
+---
+{{- if .Values.collectorService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sacunxt.fullname" . }}-collector-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "collector-service") | nindent 4 }}
+spec:
+  replicas: {{ .Values.collectorService.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "collector-service") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "collector-service") | nindent 8 }}
+    spec:
+      {{- include "sacunxt.podSecurityContext" . | nindent 6 }}
+      {{- include "sacunxt.imagePullSecrets" . | nindent 6 }}
+      {{- include "sacunxt.nodeSelector" . | nindent 6 }}
+      {{- include "sacunxt.tolerations" . | nindent 6 }}
+      {{- include "sacunxt.affinity" . | nindent 6 }}
+      containers:
+        - name: collector-service
+          image: {{ include "sacunxt.image" .Values.collectorService.image }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.collectorService.service.targetPort }}
+              protocol: TCP
+          env:
+            {{- range $key, $value := .Values.collectorService.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- include "sacunxt.commonEnv" . | nindent 12 }}
+          {{- with .Values.collectorService.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          {{- with .Values.extraVolumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- include "sacunxt.securityContext" . | nindent 10 }}
+      {{- include "sacunxt.volumes" . | nindent 6 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: collector-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "collector-service") | nindent 4 }}
+spec:
+  type: {{ .Values.collectorService.service.type }}
+  ports:
+    - port: {{ .Values.collectorService.service.port }}
+      targetPort: {{ .Values.collectorService.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "collector-service") | nindent 4 }}
+{{- end }}
+---
+{{- if .Values.normalizerService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sacunxt.fullname" . }}-normalizer-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "normalizer-service") | nindent 4 }}
+spec:
+  replicas: {{ .Values.normalizerService.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "normalizer-service") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "normalizer-service") | nindent 8 }}
+    spec:
+      {{- include "sacunxt.podSecurityContext" . | nindent 6 }}
+      {{- include "sacunxt.imagePullSecrets" . | nindent 6 }}
+      {{- include "sacunxt.nodeSelector" . | nindent 6 }}
+      {{- include "sacunxt.tolerations" . | nindent 6 }}
+      {{- include "sacunxt.affinity" . | nindent 6 }}
+      containers:
+        - name: normalizer-service
+          image: {{ include "sacunxt.image" .Values.normalizerService.image }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.normalizerService.service.targetPort }}
+              protocol: TCP
+          env:
+            {{- range $key, $value := .Values.normalizerService.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- include "sacunxt.commonEnv" . | nindent 12 }}
+          {{- with .Values.normalizerService.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          {{- with .Values.extraVolumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- include "sacunxt.securityContext" . | nindent 10 }}
+      {{- include "sacunxt.volumes" . | nindent 6 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: normalizer-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "normalizer-service") | nindent 4 }}
+spec:
+  type: {{ .Values.normalizerService.service.type }}
+  ports:
+    - port: {{ .Values.normalizerService.service.port }}
+      targetPort: {{ .Values.normalizerService.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "normalizer-service") | nindent 4 }}
+{{- end }}
+---
+{{- if .Values.publisherService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sacunxt.fullname" . }}-publisher-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "publisher-service") | nindent 4 }}
+spec:
+  replicas: {{ .Values.publisherService.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "publisher-service") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "publisher-service") | nindent 8 }}
+    spec:
+      {{- include "sacunxt.podSecurityContext" . | nindent 6 }}
+      {{- include "sacunxt.imagePullSecrets" . | nindent 6 }}
+      {{- include "sacunxt.nodeSelector" . | nindent 6 }}
+      {{- include "sacunxt.tolerations" . | nindent 6 }}
+      {{- include "sacunxt.affinity" . | nindent 6 }}
+      containers:
+        - name: publisher-service
+          image: {{ include "sacunxt.image" .Values.publisherService.image }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          {{- if .Values.publisherService.command }}
+          command: {{ .Values.publisherService.command }}
+          {{- end }}
+          {{- if .Values.publisherService.workingDir }}
+          workingDir: {{ .Values.publisherService.workingDir }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.publisherService.service.targetPort }}
+              protocol: TCP
+          env:
+            {{- range $key, $value := .Values.publisherService.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- include "sacunxt.commonEnv" . | nindent 12 }}
+          {{- with .Values.publisherService.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          {{- with .Values.extraVolumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- include "sacunxt.securityContext" . | nindent 10 }}
+      {{- include "sacunxt.volumes" . | nindent 6 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: publisher-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "publisher-service") | nindent 4 }}
+spec:
+  type: {{ .Values.publisherService.service.type }}
+  ports:
+    - port: {{ .Values.publisherService.service.port }}
+      targetPort: {{ .Values.publisherService.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "publisher-service") | nindent 4 }}
+{{- end }}
+---
+{{- if .Values.actionService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sacunxt.fullname" . }}-action-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "action-service") | nindent 4 }}
+spec:
+  replicas: {{ .Values.actionService.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "action-service") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "action-service") | nindent 8 }}
+    spec:
+      {{- include "sacunxt.podSecurityContext" . | nindent 6 }}
+      {{- include "sacunxt.imagePullSecrets" . | nindent 6 }}
+      {{- include "sacunxt.nodeSelector" . | nindent 6 }}
+      {{- include "sacunxt.tolerations" . | nindent 6 }}
+      {{- include "sacunxt.affinity" . | nindent 6 }}
+      containers:
+        - name: action-service
+          image: {{ include "sacunxt.image" .Values.actionService.image }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.actionService.service.targetPort }}
+              protocol: TCP
+          env:
+            {{- range $key, $value := .Values.actionService.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- include "sacunxt.commonEnv" . | nindent 12 }}
+          {{- with .Values.actionService.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          {{- with .Values.extraVolumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- include "sacunxt.securityContext" . | nindent 10 }}
+      {{- include "sacunxt.volumes" . | nindent 6 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: action-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "action-service") | nindent 4 }}
+spec:
+  type: {{ .Values.actionService.service.type }}
+  ports:
+    - port: {{ .Values.actionService.service.port }}
+      targetPort: {{ .Values.actionService.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "action-service") | nindent 4 }}
+{{- end }}

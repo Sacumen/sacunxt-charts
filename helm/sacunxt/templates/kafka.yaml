@@ -1,0 +1,373 @@
+{{- if .Values.kafka.enabled }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kafka-system
+  labels:
+    {{- include "sacunxt.labels" . | nindent 4 }}
+---
+# Zookeeper Headless Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "sacunxt.fullname" . }}-zookeeper-headless
+  namespace: kafka-system
+  labels:
+    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "zookeeper") | nindent 4 }}
+spec:
+  clusterIP: None
+  selector:
+    {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "zookeeper") | nindent 4 }}
+  ports:
+    - port: 2181
+      targetPort: 2181
+      name: client
+    - port: 2888
+      targetPort: 2888
+      name: server
+    - port: 3888
+      targetPort: 3888
+      name: leader-election
+---
+# Zookeeper Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: zookeeper-service
+  namespace: kafka-system
+  labels:
+    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "zookeeper") | nindent 4 }}
+spec:
+  selector:
+    {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "zookeeper") | nindent 4 }}
+  ports:
+    - port: 2181
+      targetPort: 2181
+      name: client
+  type: ClusterIP
+---
+# Zookeeper StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "sacunxt.fullname" . }}-zookeeper
+  namespace: kafka-system
+  labels:
+    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "zookeeper") | nindent 4 }}
+spec:
+  serviceName: {{ include "sacunxt.fullname" . }}-zookeeper-headless
+  replicas: {{ .Values.kafka.zookeeper.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "zookeeper") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "zookeeper") | nindent 8 }}
+    spec:
+      {{- include "sacunxt.podSecurityContext" . | nindent 6 }}
+      {{- include "sacunxt.imagePullSecrets" . | nindent 6 }}
+      {{- include "sacunxt.nodeSelector" . | nindent 6 }}
+      {{- include "sacunxt.tolerations" . | nindent 6 }}
+      {{- include "sacunxt.affinity" . | nindent 6 }}
+      initContainers:
+        - name: init-zookeeper
+          image: busybox:1.35
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          command:
+            - sh
+            - -c
+            - |
+              # Extract server ID from pod name and create myid file
+              SERVER_ID=${HOSTNAME##*-}
+              if [ -z "$SERVER_ID" ] || [ "$SERVER_ID" = "zookeeper" ]; then
+                SERVER_ID=1
+              fi
+              echo $SERVER_ID > /opt/zookeeper-3.4.13/data/myid
+              echo "Created myid file with ID: $SERVER_ID"
+              # Create directories
+              mkdir -p /opt/zookeeper-3.4.13/data
+              mkdir -p /opt/zookeeper-3.4.13/logs
+          volumeMounts:
+            - name: zookeeper-data
+              mountPath: /opt/zookeeper-3.4.13/data
+            - name: zookeeper-logs
+              mountPath: /opt/zookeeper-3.4.13/logs
+          {{- include "sacunxt.securityContext" . | nindent 10 }}
+      containers:
+        - name: zookeeper
+          image: wurstmeister/zookeeper:latest
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: 2181
+              name: client
+            - containerPort: 2888
+              name: server
+            - containerPort: 3888
+              name: leader-election
+          env:
+            - name: ZOOKEEPER_ID
+              value: "1"
+            - name: ZOOKEEPER_SERVER_1
+              value: "{{ include "sacunxt.fullname" . }}-zookeeper-0.{{ include "sacunxt.fullname" . }}-zookeeper-headless.kafka-system.svc.cluster.local:2888:3888"
+            - name: ZOOKEEPER_CLIENT_PORT
+              value: "2181"
+            - name: ZOOKEEPER_TICK_TIME
+              value: "2000"
+            - name: ZOOKEEPER_INIT_LIMIT
+              value: "5"
+            - name: ZOOKEEPER_SYNC_LIMIT
+              value: "2"
+            - name: ZOOKEEPER_DATA_DIR
+              value: "/opt/zookeeper-3.4.13/data"
+            - name: ZOOKEEPER_LOG_DIR
+              value: "/opt/zookeeper-3.4.13/logs"
+          volumeMounts:
+            - name: zookeeper-data
+              mountPath: /opt/zookeeper-3.4.13/data
+            - name: zookeeper-logs
+              mountPath: /opt/zookeeper-3.4.13/logs
+            {{- include "sacunxt.volumeMounts" . | nindent 12 }}
+          {{- with .Values.kafka.zookeeper.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            tcpSocket:
+              port: 2181
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: 2181
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          startupProbe:
+            tcpSocket:
+              port: 2181
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30
+          {{- include "sacunxt.securityContext" . | nindent 10 }}
+      {{- include "sacunxt.volumes" . | nindent 6 }}
+  volumeClaimTemplates:
+    {{- if .Values.kafka.zookeeper.persistence.enabled }}
+    - metadata:
+        name: zookeeper-data
+        labels:
+          {{- include "sacunxt.labels" . | nindent 10 }}
+      spec:
+        accessModes: 
+          - ReadWriteOnce
+        storageClassName: {{ include "sacunxt.storageClass" . }}
+        resources:
+          requests:
+            storage: {{ .Values.kafka.zookeeper.persistence.size }}
+    - metadata:
+        name: zookeeper-logs
+        labels:
+          {{- include "sacunxt.labels" . | nindent 10 }}
+      spec:
+        accessModes: 
+          - ReadWriteOnce
+        storageClassName: {{ include "sacunxt.storageClass" . }}
+        resources:
+          requests:
+            storage: 2Gi
+    {{- end }}
+---
+# Kafka Headless Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "sacunxt.fullname" . }}-kafka-headless
+  namespace: kafka-system
+  labels:
+    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "kafka") | nindent 4 }}
+spec:
+  clusterIP: None
+  selector:
+    {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "kafka") | nindent 4 }}
+  ports:
+    - port: {{ .Values.kafka.service.ports.client }}
+      targetPort: {{ .Values.kafka.service.ports.client }}
+      name: kafka
+---
+# Kafka Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-service
+  namespace: kafka-system
+  labels:
+    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "kafka") | nindent 4 }}
+spec:
+  selector:
+    {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "kafka") | nindent 4 }}
+  ports:
+    - port: {{ .Values.kafka.service.ports.client }}
+      targetPort: {{ .Values.kafka.service.ports.client }}
+      name: kafka
+  type: ClusterIP
+---
+# Kafka StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "sacunxt.fullname" . }}-kafka
+  namespace: kafka-system
+  labels:
+    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "kafka") | nindent 4 }}
+spec:
+  serviceName: {{ include "sacunxt.fullname" . }}-kafka-headless
+  replicas: {{ .Values.kafka.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "kafka") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "kafka") | nindent 8 }}
+    spec:
+      {{- include "sacunxt.podSecurityContext" . | nindent 6 }}
+      {{- include "sacunxt.imagePullSecrets" . | nindent 6 }}
+      {{- include "sacunxt.nodeSelector" . | nindent 6 }}
+      {{- include "sacunxt.tolerations" . | nindent 6 }}
+      {{- include "sacunxt.affinity" . | nindent 6 }}
+      initContainers:
+        - name: wait-for-zookeeper
+          image: busybox:1.35
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Zookeeper to be ready..."
+              until nc -z zookeeper-service.kafka-system.svc.cluster.local 2181; do
+                echo "Zookeeper not ready, waiting..."
+                sleep 2
+              done
+              echo "Zookeeper is ready!"
+          {{- include "sacunxt.securityContext" . | nindent 10 }}
+        - name: init-kafka
+          image: busybox:1.35
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          command:
+            - sh
+            - -c
+            - |
+              echo "Creating Kafka directories..."
+              mkdir -p /kafka/kafka-logs
+              chmod -R 755 /kafka
+              echo "Kafka directories ready"
+          volumeMounts:
+            - name: kafka-data
+              mountPath: /kafka
+          {{- include "sacunxt.securityContext" . | nindent 10 }}
+      containers:
+        - name: kafka
+          image: wurstmeister/kafka:latest
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.kafka.service.ports.client }}
+              name: kafka
+          env:
+            - name: KAFKA_BROKER_ID
+              value: "1"
+            - name: KAFKA_ZOOKEEPER_CONNECT
+              value: "zookeeper-service.kafka-system.svc.cluster.local:2181"
+            - name: KAFKA_LISTENERS
+              value: "PLAINTEXT://0.0.0.0:{{ .Values.kafka.service.ports.client }}"
+            - name: KAFKA_ADVERTISED_LISTENERS
+              value: "PLAINTEXT://kafka-service.kafka-system.svc.cluster.local:{{ .Values.kafka.service.ports.client }}"
+            - name: KAFKA_LOG_DIRS
+              value: "/kafka/kafka-logs"
+            - name: KAFKA_HEAP_OPTS
+              value: "-Xmx512M -Xms512M"
+            - name: KAFKA_JVM_PERFORMANCE_OPTS
+              value: "-server -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+ExplicitGCInvokesConcurrent -Djava.awt.headless=true"
+            {{- range $key, $value := .Values.kafka.config }}
+            - name: KAFKA_{{ $key | upper | replace "." "_" | replace "-" "_" }}
+              value: {{ $value | quote }}
+            {{- end }}
+          volumeMounts:
+            - name: kafka-data
+              mountPath: /kafka
+            {{- include "sacunxt.volumeMounts" . | nindent 12 }}
+          {{- with .Values.kafka.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.kafka.service.ports.client }}
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.kafka.service.ports.client }}
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 10
+            failureThreshold: 3
+          startupProbe:
+            tcpSocket:
+              port: {{ .Values.kafka.service.ports.client }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 30
+          {{- include "sacunxt.securityContext" . | nindent 10 }}
+      {{- include "sacunxt.volumes" . | nindent 6 }}
+  volumeClaimTemplates:
+    {{- if .Values.kafka.persistence.enabled }}
+    - metadata:
+        name: kafka-data
+        labels:
+          {{- include "sacunxt.labels" . | nindent 10 }}
+      spec:
+        accessModes: 
+          - ReadWriteOnce
+        storageClassName: {{ include "sacunxt.storageClass" . }}
+        resources:
+          requests:
+            storage: {{ .Values.kafka.persistence.size }}
+    {{- end }}
+---
+# PodDisruptionBudget for Zookeeper
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "sacunxt.fullname" . }}-zookeeper-pdb
+  namespace: kafka-system
+  labels:
+    {{- include "sacunxt.labels" . | nindent 4 }}
+    app.kubernetes.io/component: zookeeper
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "zookeeper") | nindent 6 }}
+---
+# PodDisruptionBudget for Kafka
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "sacunxt.fullname" . }}-kafka-pdb
+  namespace: kafka-system
+  labels:
+    {{- include "sacunxt.labels" . | nindent 4 }}
+    app.kubernetes.io/component: kafka
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "kafka") | nindent 6 }}
+{{- end }}

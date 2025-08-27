@@ -1,0 +1,136 @@
+{{- if .Values.postgresql.enabled }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: database
+  labels:
+    {{- include "sacunxt.labels" . | nindent 4 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "sacunxt.fullname" . }}-postgresql-headless
+  namespace: database
+  labels:
+    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "postgresql") | nindent 4 }}
+spec:
+  clusterIP: None
+  selector:
+    {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "postgresql") | nindent 4 }}
+  ports:
+    - name: postgresql
+      port: {{ .Values.postgresql.service.ports.postgresql }}
+      targetPort: {{ .Values.postgresql.service.ports.postgresql }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: database
+  labels:
+    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "postgresql") | nindent 4 }}
+spec:
+  selector:
+    {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "postgresql") | nindent 4 }}
+  ports:
+    - name: postgresql
+      port: {{ .Values.postgresql.service.ports.postgresql }}
+      targetPort: {{ .Values.postgresql.service.ports.postgresql }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-proxy
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "postgresql-proxy") | nindent 4 }}
+spec:
+  type: ExternalName
+  externalName: postgres-service.database.svc.cluster.local
+  ports:
+    - name: postgresql
+      port: {{ .Values.postgresql.service.ports.postgresql }}
+      targetPort: {{ .Values.postgresql.service.ports.postgresql }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "sacunxt.fullname" . }}-postgresql
+  namespace: database
+  labels:
+    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "postgresql") | nindent 4 }}
+spec:
+  serviceName: {{ include "sacunxt.fullname" . }}-postgresql-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "postgresql") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "postgresql") | nindent 8 }}
+    spec:
+      {{- include "sacunxt.podSecurityContext" . | nindent 6 }}
+      {{- include "sacunxt.nodeSelector" . | nindent 6 }}
+      {{- include "sacunxt.tolerations" . | nindent 6 }}
+      {{- include "sacunxt.affinity" . | nindent 6 }}
+      containers:
+        - name: postgresql
+          image: postgres:15-alpine
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: postgresql
+              containerPort: {{ .Values.postgresql.service.ports.postgresql }}
+              protocol: TCP
+          env:
+            - name: POSTGRES_USER
+              value: {{ .Values.postgresql.auth.username | quote }}
+            - name: POSTGRES_PASSWORD
+              value: {{ .Values.postgresql.auth.password | quote }}
+            - name: POSTGRES_DB
+              value: {{ .Values.postgresql.auth.database | quote }}
+            - name: PGDATA
+              value: "/var/lib/postgresql/data/pgdata"
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+            {{- include "sacunxt.volumeMounts" . | nindent 12 }}
+          {{- with .Values.postgresql.primary.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pg_isready -U $POSTGRES_USER -d $POSTGRES_DB
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pg_isready -U $POSTGRES_USER -d $POSTGRES_DB
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          {{- include "sacunxt.securityContext" . | nindent 10 }}
+      {{- include "sacunxt.volumes" . | nindent 6 }}
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+        labels:
+          {{- include "sacunxt.labels" . | nindent 10 }}
+      spec:
+        accessModes: 
+          - ReadWriteOnce
+        storageClassName: {{ include "sacunxt.storageClass" . }}
+        resources:
+          requests:
+            storage: {{ .Values.postgresql.primary.persistence.size }}
+{{- end }}
