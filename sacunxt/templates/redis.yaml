@@ -1,8 +1,16 @@
 {{- if .Values.redis.enabled }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ include "sacunxt.redisNamespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "sacunxt.fullname" . }}-redis
+  name: {{ .Values.redis.deploymentName | default "sacunxt-redis" }}
   namespace: {{ include "sacunxt.redisNamespace" . }}
   labels:
     app.kubernetes.io/name: {{ include "sacunxt.name" . }}
@@ -114,7 +122,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: redis
+  name: {{ .Values.redis.serviceName | default "redis" }}
   namespace: {{ include "sacunxt.redisNamespace" . }}
   labels:
     app.kubernetes.io/name: {{ include "sacunxt.name" . }}

@@ -56,6 +56,20 @@ Create namespace name for Redis
 {{- end }}
 
 {{/*
+Create namespace name for PostgreSQL
+*/}}
+{{- define "sacunxt.postgresqlNamespace" -}}
+{{- .Values.postgresql.namespace | default "database" -}}
+{{- end }}
+
+{{/*
+Create namespace name for Kafka
+*/}}
+{{- define "sacunxt.kafkaNamespace" -}}
+{{- .Values.kafka.namespace | default "kafka-system" -}}
+{{- end }}
+
+{{/*
 Init containers for dependency waiting
 */}}
 {{- define "sacunxt.initContainers" -}}
@@ -65,7 +79,7 @@ initContainers:
     command: ['sh', '-c']
     args:
       - |
-        until nc -z postgres-service.database.svc.cluster.local 5432; do
+        until nc -z {{ .Values.postgresql.serviceName | default "postgres-service" }}.{{ include "sacunxt.postgresqlNamespace" . }}.svc.cluster.local 5432; do
           echo "Waiting for PostgreSQL..."
           sleep 2
         done
@@ -75,7 +89,7 @@ initContainers:
     command: ['sh', '-c']
     args:
       - |
-        until nc -z redis.redis-cache.svc.cluster.local 6379; do
+        until nc -z {{ .Values.redis.serviceName | default "redis" }}.{{ include "sacunxt.redisNamespace" . }}.svc.cluster.local 6379; do
           echo "Waiting for Redis..."
           sleep 2
         done
@@ -85,7 +99,7 @@ initContainers:
     command: ['sh', '-c']
     args:
       - |
-        until nc -z kafka-service.kafka-system.svc.cluster.local 9092; do
+        until nc -z {{ .Values.kafka.serviceName | default "kafka-service" }}.{{ include "sacunxt.kafkaNamespace" . }}.svc.cluster.local 9092; do
           echo "Waiting for Kafka..."
           sleep 2
         done

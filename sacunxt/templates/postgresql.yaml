@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: database
+  name: {{ include "sacunxt.postgresqlNamespace" . }}
   labels:
     app.kubernetes.io/name: {{ include "sacunxt.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
@@ -11,7 +11,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "sacunxt.fullname" . }}-postgresql-headless
-  namespace: database
+  namespace: {{ include "sacunxt.postgresqlNamespace" . }}
   labels:
     app.kubernetes.io/name: {{ include "sacunxt.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
@@ -30,8 +30,8 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: postgres-service
-  namespace: database
+  name: {{ .Values.postgresql.serviceName | default "postgres-service" }}
+  namespace: {{ include "sacunxt.postgresqlNamespace" . }}
   labels:
     app.kubernetes.io/name: {{ include "sacunxt.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
@@ -46,28 +46,11 @@ spec:
       port: {{ .Values.postgresql.service.ports.postgresql }}
       targetPort: {{ .Values.postgresql.service.ports.postgresql }}
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: postgres-proxy
-  namespace: {{ include "sacunxt.namespace" . }}
-  labels:
-    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/component: postgresql-proxy
-spec:
-  type: ExternalName
-  externalName: postgres-service.database.svc.cluster.local
-  ports:
-    - name: postgresql
-      port: {{ .Values.postgresql.service.ports.postgresql }}
-      targetPort: {{ .Values.postgresql.service.ports.postgresql }}
----
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ include "sacunxt.fullname" . }}-postgresql
-  namespace: database
+  name: {{ .Values.postgresql.deploymentName | default "sacunxt-postgresql" }}
+  namespace: {{ include "sacunxt.postgresqlNamespace" . }}
   labels:
     app.kubernetes.io/name: {{ include "sacunxt.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
