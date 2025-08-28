@@ -4,7 +4,8 @@ kind: Namespace
 metadata:
   name: database
   labels:
-    {{- include "sacunxt.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
 ---
 apiVersion: v1
 kind: Service
@@ -12,11 +13,15 @@ metadata:
   name: {{ include "sacunxt.fullname" . }}-postgresql-headless
   namespace: database
   labels:
-    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "postgresql") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: postgresql
 spec:
   clusterIP: None
   selector:
-    {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "postgresql") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: postgresql
   ports:
     - name: postgresql
       port: {{ .Values.postgresql.service.ports.postgresql }}
@@ -28,10 +33,14 @@ metadata:
   name: postgres-service
   namespace: database
   labels:
-    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "postgresql") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: postgresql
 spec:
   selector:
-    {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "postgresql") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: postgresql
   ports:
     - name: postgresql
       port: {{ .Values.postgresql.service.ports.postgresql }}
@@ -43,7 +52,9 @@ metadata:
   name: postgres-proxy
   namespace: {{ include "sacunxt.namespace" . }}
   labels:
-    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "postgresql-proxy") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: postgresql-proxy
 spec:
   type: ExternalName
   externalName: postgres-service.database.svc.cluster.local
@@ -58,22 +69,27 @@ metadata:
   name: {{ include "sacunxt.fullname" . }}-postgresql
   namespace: database
   labels:
-    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "postgresql") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: postgresql
 spec:
   serviceName: {{ include "sacunxt.fullname" . }}-postgresql-headless
   replicas: 1
   selector:
     matchLabels:
-      {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "postgresql") | nindent 6 }}
+      app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: postgresql
   template:
     metadata:
       labels:
-        {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "postgresql") | nindent 8 }}
+        app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: postgresql
     spec:
-      {{- include "sacunxt.podSecurityContext" . | nindent 6 }}
-      {{- include "sacunxt.nodeSelector" . | nindent 6 }}
-      {{- include "sacunxt.tolerations" . | nindent 6 }}
-      {{- include "sacunxt.affinity" . | nindent 6 }}
+      securityContext:
+        runAsUser: 0
+        fsGroup: 0
       containers:
         - name: postgresql
           image: postgres:15-alpine
@@ -94,7 +110,6 @@ spec:
           volumeMounts:
             - name: postgres-data
               mountPath: /var/lib/postgresql/data
-            {{- include "sacunxt.volumeMounts" . | nindent 12 }}
           {{- with .Values.postgresql.primary.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
@@ -119,17 +134,18 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 3
-          {{- include "sacunxt.securityContext" . | nindent 10 }}
-      {{- include "sacunxt.volumes" . | nindent 6 }}
+          securityContext:
+            runAsUser: 0
   volumeClaimTemplates:
     - metadata:
         name: postgres-data
         labels:
-          {{- include "sacunxt.labels" . | nindent 10 }}
+          app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+          app.kubernetes.io/instance: {{ .Release.Name }}
       spec:
         accessModes: 
           - ReadWriteOnce
-        storageClassName: {{ include "sacunxt.storageClass" . }}
+        storageClassName: {{ .Values.postgresql.primary.persistence.storageClass | default "standard" }}
         resources:
           requests:
             storage: {{ .Values.postgresql.primary.persistence.size }}

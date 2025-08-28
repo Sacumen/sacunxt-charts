@@ -1,14 +1,20 @@
 # Global configuration
 global:
-  imageRegistry: "your-registry.example.com"
+  imageRegistry: "myregistry.azurecr.io"
   imagePullPolicy: Always
-  storageClass: "default"
-# Common labels
-commonLabels:
-  app.kubernetes.io/name: sacunxt
-  app.kubernetes.io/instance: sacunxt
-  app.kubernetes.io/version: "1.0.0"
-  app.kubernetes.io/managed-by: helm
+  storageClass: "standard"
+  namespace: "sacunxt"
+  imagePullSecrets: "acr-secret"
+  dockerConfigJson: ""
+
+# Secrets configuration
+secrets:
+  createACRSecret: true
+  copyToNamespaces:
+    - "sacunxt"
+  acr:
+    username: ""
+    password: ""
 # Database configuration
 postgresql:
   enabled: true
@@ -19,7 +25,7 @@ postgresql:
   primary:
     persistence:
       enabled: true
-      storageClass: "default"
+      storageClass: "standard"
       size: 5Gi
     resources:
       requests:
@@ -38,7 +44,9 @@ redis:
     enabled: false
   master:
     persistence:
-      enabled: false
+      enabled: true
+      storageClass: "standard"
+      size: 5Gi
     resources:
       requests:
         memory: "128Mi"
@@ -58,18 +66,18 @@ kafka:
     replicaCount: 1
     persistence:
       enabled: true
-      storageClass: "default"
+      storageClass: "standard"
       size: 5Gi
     resources:
       requests:
-        memory: "256Mi"
+        memory: "512Mi"
         cpu: "200m"
       limits:
-        memory: "512Mi"
+        memory: "1Gi"
         cpu: "400m"
   persistence:
     enabled: true
-    storageClass: "default"
+    storageClass: "standard"
     size: 20Gi
   resources:
     requests:
@@ -116,12 +124,15 @@ apiService:
       memory: "512Mi"
       cpu: "500m"
   env:
-    STATUS: "http://scheduler-service:8002/scheduler/status"
+    STATUS: "http://scheduler-service.sacunxt.svc.cluster.local:8002/scheduler/status"
     DB_HOST: "postgres-service.database.svc.cluster.local"
     DB_PORT: "5432"
     DB_USER: "sacunxt"
     DB_PASSWORD: "sacunxt_password"
+    DB_NAME: "api_service"
     PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
+    REDIS_HOST: "redis.redis-cache.svc.cluster.local"
+    REDIS_PORT: "6379"
 # Scheduler Service configuration
 schedulerService:
   enabled: true
@@ -141,7 +152,8 @@ schedulerService:
       memory: "512Mi"
       cpu: "500m"
   env:
-    REDIS_HOST: "redis"
+    STATUS: "http://scheduler-service.sacunxt.svc.cluster.local:8002/scheduler/status"
+    REDIS_HOST: "redis.redis-cache.svc.cluster.local"
     REDIS_PORT: "6379"
     CONSUMER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
@@ -151,6 +163,7 @@ schedulerService:
     DB_PORT: "5432"
     DB_USER: "sacunxt"
     DB_PASSWORD: "sacunxt_password"
+    DB_NAME: "api_service"
 # Config Service configuration
 configService:
   enabled: true
@@ -160,8 +173,8 @@ configService:
     tag: 2.1.0
   service:
     type: ClusterIP
-    port: 80
-    targetPort: 8080
+    port: 8001
+    targetPort: 8001
   resources:
     requests:
       memory: "256Mi"
@@ -170,7 +183,8 @@ configService:
       memory: "512Mi"
       cpu: "500m"
   env:
-    REDIS_HOST: "redis"
+    STATUS: "http://scheduler-service.sacunxt.svc.cluster.local:8002/scheduler/status"
+    REDIS_HOST: "redis.redis-cache.svc.cluster.local"
     REDIS_PORT: "6379"
     CONSUMER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
@@ -178,6 +192,7 @@ configService:
     DB_PORT: "5432"
     DB_USER: "sacunxt"
     DB_PASSWORD: "sacunxt_password"
+    DB_NAME: "api_service"
 # Collector Service configuration
 collectorService:
   enabled: true
@@ -187,8 +202,8 @@ collectorService:
     tag: 2.1.0
   service:
     type: ClusterIP
-    port: 80
-    targetPort: 8080
+    port: 8003
+    targetPort: 8003
   resources:
     requests:
       memory: "256Mi"
@@ -197,7 +212,8 @@ collectorService:
       memory: "512Mi"
       cpu: "500m"
   env:
-    REDIS_HOST: "redis"
+    STATUS: "http://scheduler-service.sacunxt.svc.cluster.local:8002/scheduler/status"
+    REDIS_HOST: "redis.redis-cache.svc.cluster.local"
     REDIS_PORT: "6379"
     CONSUMER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
@@ -206,6 +222,7 @@ collectorService:
     DB_PORT: "5432"
     DB_USER: "sacunxt"
     DB_PASSWORD: "sacunxt_password"
+    DB_NAME: "api_service"
 # Normalizer Service configuration
 normalizerService:
   enabled: true
@@ -215,8 +232,8 @@ normalizerService:
     tag: 2.1.0
   service:
     type: ClusterIP
-    port: 80
-    targetPort: 8080
+    port: 8004
+    targetPort: 8004
   resources:
     requests:
       memory: "256Mi"
@@ -225,7 +242,8 @@ normalizerService:
       memory: "512Mi"
       cpu: "500m"
   env:
-    REDIS_HOST: "redis"
+    STATUS: "http://scheduler-service.sacunxt.svc.cluster.local:8002/scheduler/status"
+    REDIS_HOST: "redis.redis-cache.svc.cluster.local"
     REDIS_PORT: "6379"
     CONSUMER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
@@ -234,6 +252,7 @@ normalizerService:
     DB_PORT: "5432"
     DB_USER: "sacunxt"
     DB_PASSWORD: "sacunxt_password"
+    DB_NAME: "api_service"
 # Publisher Service configuration
 publisherService:
   enabled: true
@@ -243,8 +262,8 @@ publisherService:
     tag: 2.1.0
   service:
     type: ClusterIP
-    port: 80
-    targetPort: 8080
+    port: 8005
+    targetPort: 8005
   resources:
     requests:
       memory: "256Mi"
@@ -252,10 +271,11 @@ publisherService:
     limits:
       memory: "512Mi"
       cpu: "500m"
-  command: ["python", "run.py"]
-  workingDir: /app
+  command: ["python", "/app/run.py"]
+  workingDir: "/usr/work"
   env:
-    HOST: "redis"
+    STATUS: "http://scheduler-service.sacunxt.svc.cluster.local:8002/scheduler/status"
+    HOST: "redis.redis-cache.svc.cluster.local"
     PORT: "6379"
     CONSUMER_HOST: "kafka-service.kafka-system.svc.cluster.local:9092"
     PRODUCER_HOST: "kafka-service.kafka-system.svc.cluster.local:9092"
@@ -263,6 +283,7 @@ publisherService:
     DB_PORT: "5432"
     DB_USER: "sacunxt"
     DB_PASSWORD: "sacunxt_password"
+    DB_NAME: "api_service"
 # Action Service configuration
 actionService:
   enabled: true
@@ -272,8 +293,8 @@ actionService:
     tag: 2.1.0
   service:
     type: ClusterIP
-    port: 80
-    targetPort: 8080
+    port: 8006
+    targetPort: 8006
   resources:
     requests:
       memory: "256Mi"
@@ -282,10 +303,19 @@ actionService:
       memory: "512Mi"
       cpu: "500m"
   env:
+    STATUS: "http://scheduler-service.sacunxt.svc.cluster.local:8002/scheduler/status"
+    REDIS_HOST: "redis.redis-cache.svc.cluster.local"
+    REDIS_PORT: "6379"
     CONSUMER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
+    PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
+    DB_HOST: "postgres-service.database.svc.cluster.local"
+    DB_PORT: "5432"
+    DB_USER: "sacunxt"
+    DB_PASSWORD: "sacunxt_password"
+    DB_NAME: "api_service"
 # ServiceMonitor for Prometheus monitoring
 serviceMonitor:
-  enabled: false
+  enabled: true
   namespace: monitoring
   interval: 30s
   scrapeTimeout: 10s
@@ -295,7 +325,7 @@ podDisruptionBudget:
   minAvailable: 1
 # Network Policies
 networkPolicy:
-  enabled: false
+  enabled: true
   policyTypes:
     - Ingress
     - Egress

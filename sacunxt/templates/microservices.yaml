@@ -5,25 +5,31 @@ metadata:
   name: {{ include "sacunxt.fullname" . }}-api-service
   namespace: {{ include "sacunxt.namespace" . }}
   labels:
-    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "api-service") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: api-service
 spec:
   replicas: {{ .Values.apiService.replicaCount }}
   selector:
     matchLabels:
-      {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "api-service") | nindent 6 }}
+      app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: api-service
   template:
     metadata:
       labels:
-        {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "api-service") | nindent 8 }}
+        app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: api-service
     spec:
-      {{- include "sacunxt.podSecurityContext" . | nindent 6 }}
+      securityContext:
+        runAsUser: 0
+        fsGroup: 0
       {{- include "sacunxt.imagePullSecrets" . | nindent 6 }}
-      {{- include "sacunxt.nodeSelector" . | nindent 6 }}
-      {{- include "sacunxt.tolerations" . | nindent 6 }}
-      {{- include "sacunxt.affinity" . | nindent 6 }}
+      {{- include "sacunxt.initContainers" . | nindent 6 }}
       containers:
         - name: api-service
-          image: {{ include "sacunxt.image" (list . .Values.apiService.image) }}
+          image: {{ .Values.global.imageRegistry }}/{{ .Values.apiService.image.repository }}:{{ .Values.apiService.image.tag }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           ports:
             - name: http
@@ -34,11 +40,13 @@ spec:
             - name: {{ $key }}
               value: {{ $value | quote }}
             {{- end }}
-            {{- include "sacunxt.commonEnv" . | nindent 12 }}
           {{- with .Values.apiService.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          volumeMounts:
+            - name: log-storage
+              mountPath: /usr/work/store
           livenessProbe:
             httpGet:
               path: /health
@@ -59,8 +67,11 @@ spec:
           volumeMounts:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- include "sacunxt.securityContext" . | nindent 10 }}
-      {{- include "sacunxt.volumes" . | nindent 6 }}
+          securityContext:
+            runAsUser: 0
+      volumes:
+        - name: log-storage
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -68,7 +79,9 @@ metadata:
   name: api-service
   namespace: {{ include "sacunxt.namespace" . }}
   labels:
-    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "api-service") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: api-service
 spec:
   type: {{ .Values.apiService.service.type }}
   ports:
@@ -77,7 +90,9 @@ spec:
       protocol: TCP
       name: http
   selector:
-    {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "api-service") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: api-service
 {{- end }}
 ---
 {{- if .Values.schedulerService.enabled }}
@@ -87,25 +102,31 @@ metadata:
   name: {{ include "sacunxt.fullname" . }}-scheduler-service
   namespace: {{ include "sacunxt.namespace" . }}
   labels:
-    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "scheduler-service") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: scheduler-service
 spec:
   replicas: {{ .Values.schedulerService.replicaCount }}
   selector:
     matchLabels:
-      {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "scheduler-service") | nindent 6 }}
+      app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: scheduler-service
   template:
     metadata:
       labels:
-        {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "scheduler-service") | nindent 8 }}
+        app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: scheduler-service
     spec:
-      {{- include "sacunxt.podSecurityContext" . | nindent 6 }}
+      securityContext:
+        runAsUser: 0
+        fsGroup: 0
       {{- include "sacunxt.imagePullSecrets" . | nindent 6 }}
-      {{- include "sacunxt.nodeSelector" . | nindent 6 }}
-      {{- include "sacunxt.tolerations" . | nindent 6 }}
-      {{- include "sacunxt.affinity" . | nindent 6 }}
+      {{- include "sacunxt.initContainers" . | nindent 6 }}
       containers:
         - name: scheduler-service
-          image: {{ include "sacunxt.image" (list . .Values.schedulerService.image) }}
+          image: {{ .Values.global.imageRegistry }}/{{ .Values.schedulerService.image.repository }}:{{ .Values.schedulerService.image.tag }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           ports:
             - name: http
@@ -116,11 +137,13 @@ spec:
             - name: {{ $key }}
               value: {{ $value | quote }}
             {{- end }}
-            {{- include "sacunxt.commonEnv" . | nindent 12 }}
           {{- with .Values.schedulerService.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          volumeMounts:
+            - name: log-storage
+              mountPath: /usr/work/store
           livenessProbe:
             httpGet:
               path: /scheduler/status
@@ -141,8 +164,11 @@ spec:
           volumeMounts:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- include "sacunxt.securityContext" . | nindent 10 }}
-      {{- include "sacunxt.volumes" . | nindent 6 }}
+          securityContext:
+            runAsUser: 0
+      volumes:
+        - name: log-storage
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -150,7 +176,9 @@ metadata:
   name: scheduler-service
   namespace: {{ include "sacunxt.namespace" . }}
   labels:
-    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "scheduler-service") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: scheduler-service
 spec:
   type: {{ .Values.schedulerService.service.type }}
   ports:
@@ -159,7 +187,9 @@ spec:
       protocol: TCP
       name: http
   selector:
-    {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "scheduler-service") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: scheduler-service
 {{- end }}
 ---
 {{- if .Values.configService.enabled }}
@@ -169,25 +199,31 @@ metadata:
   name: {{ include "sacunxt.fullname" . }}-config-service
   namespace: {{ include "sacunxt.namespace" . }}
   labels:
-    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "config-service") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: config-service
 spec:
   replicas: {{ .Values.configService.replicaCount }}
   selector:
     matchLabels:
-      {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "config-service") | nindent 6 }}
+      app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: config-service
   template:
     metadata:
       labels:
-        {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "config-service") | nindent 8 }}
+        app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: config-service
     spec:
-      {{- include "sacunxt.podSecurityContext" . | nindent 6 }}
+      securityContext:
+        runAsUser: 0
+        fsGroup: 0
       {{- include "sacunxt.imagePullSecrets" . | nindent 6 }}
-      {{- include "sacunxt.nodeSelector" . | nindent 6 }}
-      {{- include "sacunxt.tolerations" . | nindent 6 }}
-      {{- include "sacunxt.affinity" . | nindent 6 }}
+      {{- include "sacunxt.initContainers" . | nindent 6 }}
       containers:
         - name: config-service
-          image: {{ include "sacunxt.image" (list . .Values.configService.image) }}
+          image: {{ .Values.global.imageRegistry }}/{{ .Values.configService.image.repository }}:{{ .Values.configService.image.tag }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           ports:
             - name: http
@@ -198,11 +234,13 @@ spec:
             - name: {{ $key }}
               value: {{ $value | quote }}
             {{- end }}
-            {{- include "sacunxt.commonEnv" . | nindent 12 }}
           {{- with .Values.configService.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          volumeMounts:
+            - name: log-storage
+              mountPath: /usr/work/store
           livenessProbe:
             tcpSocket:
               port: http
@@ -221,8 +259,11 @@ spec:
           volumeMounts:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- include "sacunxt.securityContext" . | nindent 10 }}
-      {{- include "sacunxt.volumes" . | nindent 6 }}
+          securityContext:
+            runAsUser: 0
+      volumes:
+        - name: log-storage
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -230,7 +271,9 @@ metadata:
   name: config-service
   namespace: {{ include "sacunxt.namespace" . }}
   labels:
-    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "config-service") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: config-service
 spec:
   type: {{ .Values.configService.service.type }}
   ports:
@@ -239,7 +282,9 @@ spec:
       protocol: TCP
       name: http
   selector:
-    {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "config-service") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: config-service
 {{- end }}
 ---
 {{- if .Values.collectorService.enabled }}
@@ -249,25 +294,31 @@ metadata:
   name: {{ include "sacunxt.fullname" . }}-collector-service
   namespace: {{ include "sacunxt.namespace" . }}
   labels:
-    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "collector-service") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: collector-service
 spec:
   replicas: {{ .Values.collectorService.replicaCount }}
   selector:
     matchLabels:
-      {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "collector-service") | nindent 6 }}
+      app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: collector-service
   template:
     metadata:
       labels:
-        {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "collector-service") | nindent 8 }}
+        app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: collector-service
     spec:
-      {{- include "sacunxt.podSecurityContext" . | nindent 6 }}
+      securityContext:
+        runAsUser: 0
+        fsGroup: 0
       {{- include "sacunxt.imagePullSecrets" . | nindent 6 }}
-      {{- include "sacunxt.nodeSelector" . | nindent 6 }}
-      {{- include "sacunxt.tolerations" . | nindent 6 }}
-      {{- include "sacunxt.affinity" . | nindent 6 }}
+      {{- include "sacunxt.initContainers" . | nindent 6 }}
       containers:
         - name: collector-service
-          image: {{ include "sacunxt.image" (list . .Values.collectorService.image) }}
+          image: {{ .Values.global.imageRegistry }}/{{ .Values.collectorService.image.repository }}:{{ .Values.collectorService.image.tag }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           ports:
             - name: http
@@ -278,11 +329,13 @@ spec:
             - name: {{ $key }}
               value: {{ $value | quote }}
             {{- end }}
-            {{- include "sacunxt.commonEnv" . | nindent 12 }}
           {{- with .Values.collectorService.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          volumeMounts:
+            - name: log-storage
+              mountPath: /usr/work/store
           livenessProbe:
             tcpSocket:
               port: http
@@ -301,8 +354,11 @@ spec:
           volumeMounts:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- include "sacunxt.securityContext" . | nindent 10 }}
-      {{- include "sacunxt.volumes" . | nindent 6 }}
+          securityContext:
+            runAsUser: 0
+      volumes:
+        - name: log-storage
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -310,7 +366,9 @@ metadata:
   name: collector-service
   namespace: {{ include "sacunxt.namespace" . }}
   labels:
-    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "collector-service") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: collector-service
 spec:
   type: {{ .Values.collectorService.service.type }}
   ports:
@@ -319,7 +377,9 @@ spec:
       protocol: TCP
       name: http
   selector:
-    {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "collector-service") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: collector-service
 {{- end }}
 ---
 {{- if .Values.normalizerService.enabled }}
@@ -329,25 +389,31 @@ metadata:
   name: {{ include "sacunxt.fullname" . }}-normalizer-service
   namespace: {{ include "sacunxt.namespace" . }}
   labels:
-    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "normalizer-service") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: normalizer-service
 spec:
   replicas: {{ .Values.normalizerService.replicaCount }}
   selector:
     matchLabels:
-      {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "normalizer-service") | nindent 6 }}
+      app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: normalizer-service
   template:
     metadata:
       labels:
-        {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "normalizer-service") | nindent 8 }}
+        app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: normalizer-service
     spec:
-      {{- include "sacunxt.podSecurityContext" . | nindent 6 }}
+      securityContext:
+        runAsUser: 0
+        fsGroup: 0
       {{- include "sacunxt.imagePullSecrets" . | nindent 6 }}
-      {{- include "sacunxt.nodeSelector" . | nindent 6 }}
-      {{- include "sacunxt.tolerations" . | nindent 6 }}
-      {{- include "sacunxt.affinity" . | nindent 6 }}
+      {{- include "sacunxt.initContainers" . | nindent 6 }}
       containers:
         - name: normalizer-service
-          image: {{ include "sacunxt.image" (list . .Values.normalizerService.image) }}
+          image: {{ .Values.global.imageRegistry }}/{{ .Values.normalizerService.image.repository }}:{{ .Values.normalizerService.image.tag }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           ports:
             - name: http
@@ -358,11 +424,13 @@ spec:
             - name: {{ $key }}
               value: {{ $value | quote }}
             {{- end }}
-            {{- include "sacunxt.commonEnv" . | nindent 12 }}
           {{- with .Values.normalizerService.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          volumeMounts:
+            - name: log-storage
+              mountPath: /usr/work/store
           livenessProbe:
             tcpSocket:
               port: http
@@ -381,8 +449,11 @@ spec:
           volumeMounts:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- include "sacunxt.securityContext" . | nindent 10 }}
-      {{- include "sacunxt.volumes" . | nindent 6 }}
+          securityContext:
+            runAsUser: 0
+      volumes:
+        - name: log-storage
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -390,7 +461,9 @@ metadata:
   name: normalizer-service
   namespace: {{ include "sacunxt.namespace" . }}
   labels:
-    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "normalizer-service") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: normalizer-service
 spec:
   type: {{ .Values.normalizerService.service.type }}
   ports:
@@ -399,7 +472,9 @@ spec:
       protocol: TCP
       name: http
   selector:
-    {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "normalizer-service") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: normalizer-service
 {{- end }}
 ---
 {{- if .Values.publisherService.enabled }}
@@ -409,28 +484,34 @@ metadata:
   name: {{ include "sacunxt.fullname" . }}-publisher-service
   namespace: {{ include "sacunxt.namespace" . }}
   labels:
-    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "publisher-service") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: publisher-service
 spec:
   replicas: {{ .Values.publisherService.replicaCount }}
   selector:
     matchLabels:
-      {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "publisher-service") | nindent 6 }}
+      app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: publisher-service
   template:
     metadata:
       labels:
-        {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "publisher-service") | nindent 8 }}
+        app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: publisher-service
     spec:
-      {{- include "sacunxt.podSecurityContext" . | nindent 6 }}
+      securityContext:
+        runAsUser: 0
+        fsGroup: 0
       {{- include "sacunxt.imagePullSecrets" . | nindent 6 }}
-      {{- include "sacunxt.nodeSelector" . | nindent 6 }}
-      {{- include "sacunxt.tolerations" . | nindent 6 }}
-      {{- include "sacunxt.affinity" . | nindent 6 }}
+      {{- include "sacunxt.initContainers" . | nindent 6 }}
       containers:
         - name: publisher-service
-          image: {{ include "sacunxt.image" (list . .Values.publisherService.image) }}
+          image: {{ .Values.global.imageRegistry }}/{{ .Values.publisherService.image.repository }}:{{ .Values.publisherService.image.tag }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           {{- if .Values.publisherService.command }}
-          command: {{ .Values.publisherService.command }}
+          command: {{ .Values.publisherService.command | toJson }}
           {{- end }}
           {{- if .Values.publisherService.workingDir }}
           workingDir: {{ .Values.publisherService.workingDir }}
@@ -444,11 +525,13 @@ spec:
             - name: {{ $key }}
               value: {{ $value | quote }}
             {{- end }}
-            {{- include "sacunxt.commonEnv" . | nindent 12 }}
           {{- with .Values.publisherService.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          volumeMounts:
+            - name: log-storage
+              mountPath: /usr/work/store
           livenessProbe:
             tcpSocket:
               port: http
@@ -467,8 +550,11 @@ spec:
           volumeMounts:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- include "sacunxt.securityContext" . | nindent 10 }}
-      {{- include "sacunxt.volumes" . | nindent 6 }}
+          securityContext:
+            runAsUser: 0
+      volumes:
+        - name: log-storage
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -476,7 +562,9 @@ metadata:
   name: publisher-service
   namespace: {{ include "sacunxt.namespace" . }}
   labels:
-    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "publisher-service") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: publisher-service
 spec:
   type: {{ .Values.publisherService.service.type }}
   ports:
@@ -485,7 +573,9 @@ spec:
       protocol: TCP
       name: http
   selector:
-    {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "publisher-service") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: publisher-service
 {{- end }}
 ---
 {{- if .Values.actionService.enabled }}
@@ -495,25 +585,31 @@ metadata:
   name: {{ include "sacunxt.fullname" . }}-action-service
   namespace: {{ include "sacunxt.namespace" . }}
   labels:
-    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "action-service") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: action-service
 spec:
   replicas: {{ .Values.actionService.replicaCount }}
   selector:
     matchLabels:
-      {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "action-service") | nindent 6 }}
+      app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: action-service
   template:
     metadata:
       labels:
-        {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "action-service") | nindent 8 }}
+        app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: action-service
     spec:
-      {{- include "sacunxt.podSecurityContext" . | nindent 6 }}
+      securityContext:
+        runAsUser: 0
+        fsGroup: 0
       {{- include "sacunxt.imagePullSecrets" . | nindent 6 }}
-      {{- include "sacunxt.nodeSelector" . | nindent 6 }}
-      {{- include "sacunxt.tolerations" . | nindent 6 }}
-      {{- include "sacunxt.affinity" . | nindent 6 }}
+      {{- include "sacunxt.initContainers" . | nindent 6 }}
       containers:
         - name: action-service
-          image: {{ include "sacunxt.image" (list . .Values.actionService.image) }}
+          image: {{ .Values.global.imageRegistry }}/{{ .Values.actionService.image.repository }}:{{ .Values.actionService.image.tag }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           ports:
             - name: http
@@ -524,11 +620,13 @@ spec:
             - name: {{ $key }}
               value: {{ $value | quote }}
             {{- end }}
-            {{- include "sacunxt.commonEnv" . | nindent 12 }}
           {{- with .Values.actionService.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          volumeMounts:
+            - name: log-storage
+              mountPath: /usr/work/store
           livenessProbe:
             tcpSocket:
               port: http
@@ -547,8 +645,11 @@ spec:
           volumeMounts:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- include "sacunxt.securityContext" . | nindent 10 }}
-      {{- include "sacunxt.volumes" . | nindent 6 }}
+          securityContext:
+            runAsUser: 0
+      volumes:
+        - name: log-storage
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -556,7 +657,9 @@ metadata:
   name: action-service
   namespace: {{ include "sacunxt.namespace" . }}
   labels:
-    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "action-service") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: action-service
 spec:
   type: {{ .Values.actionService.service.type }}
   ports:
@@ -565,5 +668,7 @@ spec:
       protocol: TCP
       name: http
   selector:
-    {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "action-service") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: action-service
 {{- end }}

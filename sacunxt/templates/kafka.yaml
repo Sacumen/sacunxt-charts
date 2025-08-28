@@ -1,0 +1,95 @@
+{{- if .Values.kafka.enabled }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kafka-system
+  labels:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+---
+# Kafka Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-service
+  namespace: kafka-system
+  labels:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: kafka
+spec:
+  selector:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: kafka
+  ports:
+    - port: 9092
+      targetPort: 9092
+      name: kafka
+---
+# Kafka Deployment (using Redpanda - lightweight Kafka alternative)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sacunxt.fullname" . }}-kafka
+  namespace: kafka-system
+  labels:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: kafka
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: kafka
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: kafka
+    spec:
+      containers:
+        - name: kafka
+          image: docker.redpanda.com/redpandadata/redpanda:v23.2.8
+          ports:
+            - containerPort: 9092
+              name: kafka
+            - containerPort: 9644
+              name: admin
+          env:
+            - name: REDPANDA_ADVERTISE_KAFKA_ADDR
+              value: "kafka-service.kafka-system.svc.cluster.local:9092"
+          command:
+            - /usr/bin/rpk
+            - redpanda
+            - start
+            - --smp=1
+            - --memory=512M
+            - --reserve-memory=0M
+            - --overprovisioned
+            - --node-id=0
+            - --kafka-addr=0.0.0.0:9092
+            - --advertise-kafka-addr=$(REDPANDA_ADVERTISE_KAFKA_ADDR)
+            - --pandaproxy-addr=0.0.0.0:8082
+            - --advertise-pandaproxy-addr=kafka-service.kafka-system.svc.cluster.local:8082
+            - --schema-registry-addr=0.0.0.0:8081
+            - --rpc-addr=0.0.0.0:33145
+            - --advertise-rpc-addr=kafka-service.kafka-system.svc.cluster.local:33145
+            - --mode=dev-container
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "200m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          volumeMounts:
+            - name: kafka-data
+              mountPath: /var/lib/redpanda/data
+      volumes:
+        - name: kafka-data
+          emptyDir: {}
+{{- end }}

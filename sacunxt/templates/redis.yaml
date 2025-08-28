@@ -3,24 +3,29 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "sacunxt.fullname" . }}-redis
-  namespace: {{ include "sacunxt.namespace" . }}
+  namespace: {{ include "sacunxt.redisNamespace" . }}
   labels:
-    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "redis") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: redis
 spec:
   replicas: 1
   selector:
     matchLabels:
-      {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "redis") | nindent 6 }}
+      app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: redis
   template:
     metadata:
       labels:
-        {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "redis") | nindent 8 }}
+        app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: redis
     spec:
-      {{- include "sacunxt.podSecurityContext" . | nindent 6 }}
+      securityContext:
+        runAsUser: 0
+        fsGroup: 0
       {{- include "sacunxt.imagePullSecrets" . | nindent 6 }}
-      {{- include "sacunxt.nodeSelector" . | nindent 6 }}
-      {{- include "sacunxt.tolerations" . | nindent 6 }}
-      {{- include "sacunxt.affinity" . | nindent 6 }}
       containers:
         - name: redis
           image: redis:7-alpine
@@ -71,22 +76,20 @@ spec:
           volumeMounts:
             - name: redis-data
               mountPath: /data
-            {{- include "sacunxt.volumeMounts" . | nindent 12 }}
           {{- else }}
           {{- with .Values.extraVolumeMounts }}
           volumeMounts:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           {{- end }}
-          {{- include "sacunxt.securityContext" . | nindent 10 }}
+          securityContext:
+            runAsUser: 0
       {{- if .Values.redis.master.persistence.enabled }}
       volumes:
         - name: redis-data
           persistentVolumeClaim:
             claimName: {{ include "sacunxt.fullname" . }}-redis-pvc
-        {{- include "sacunxt.volumes" . | nindent 8 }}
       {{- else }}
-      {{- include "sacunxt.volumes" . | nindent 6 }}
       {{- end }}
 ---
 {{- if .Values.redis.master.persistence.enabled }}
@@ -94,14 +97,15 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: {{ include "sacunxt.fullname" . }}-redis-pvc
-  namespace: {{ include "sacunxt.namespace" . }}
+  namespace: {{ include "sacunxt.redisNamespace" . }}
   labels:
-    {{- include "sacunxt.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/component: redis
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: {{ include "sacunxt.storageClass" . }}
+  storageClassName: {{ .Values.redis.master.persistence.storageClass | default "standard" }}
   resources:
     requests:
       storage: {{ .Values.redis.master.persistence.size }}
@@ -111,13 +115,17 @@ apiVersion: v1
 kind: Service
 metadata:
   name: redis
-  namespace: {{ include "sacunxt.namespace" . }}
+  namespace: {{ include "sacunxt.redisNamespace" . }}
   labels:
-    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "redis") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: redis
 spec:
   type: ClusterIP
   selector:
-    {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "redis") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: redis
   ports:
     - name: redis
       port: {{ .Values.redis.service.ports.redis }}
@@ -128,13 +136,17 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "sacunxt.fullname" . }}-redis-headless
-  namespace: {{ include "sacunxt.namespace" . }}
+  namespace: {{ include "sacunxt.redisNamespace" . }}
   labels:
-    {{- include "sacunxt.service.labels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "redis") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: redis
 spec:
   clusterIP: None
   selector:
-    {{- include "sacunxt.service.selectorLabels" (dict "Chart" .Chart "Release" .Release "Values" .Values "component" "redis") | nindent 4 }}
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: redis
   ports:
     - name: redis
       port: {{ .Values.redis.service.ports.redis }}
