@@ -1,0 +1,682 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ include "sacunxt.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+---
+{{- if .Values.apiService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sacunxt.fullname" . }}-api-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: api-service
+spec:
+  replicas: {{ .Values.apiService.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: api-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: api-service
+    spec:
+      securityContext:
+        runAsUser: 0
+        fsGroup: 0
+      {{- include "sacunxt.imagePullSecrets" . | nindent 6 }}
+      {{- include "sacunxt.initContainers" . | nindent 6 }}
+      containers:
+        - name: api-service
+          image: {{ .Values.global.imageRegistry }}/{{ .Values.apiService.image.repository }}:{{ .Values.apiService.image.tag }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.apiService.service.targetPort }}
+              protocol: TCP
+          env:
+            {{- range $key, $value := .Values.apiService.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- with .Values.apiService.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: log-storage
+              mountPath: /usr/work/store
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          {{- with .Values.extraVolumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            runAsUser: 0
+      volumes:
+        - name: log-storage
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: api-service
+spec:
+  type: {{ .Values.apiService.service.type }}
+  ports:
+    - port: {{ .Values.apiService.service.port }}
+      targetPort: {{ .Values.apiService.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: api-service
+{{- end }}
+---
+{{- if .Values.schedulerService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sacunxt.fullname" . }}-scheduler-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: scheduler-service
+spec:
+  replicas: {{ .Values.schedulerService.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: scheduler-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: scheduler-service
+    spec:
+      securityContext:
+        runAsUser: 0
+        fsGroup: 0
+      {{- include "sacunxt.imagePullSecrets" . | nindent 6 }}
+      {{- include "sacunxt.initContainers" . | nindent 6 }}
+      containers:
+        - name: scheduler-service
+          image: {{ .Values.global.imageRegistry }}/{{ .Values.schedulerService.image.repository }}:{{ .Values.schedulerService.image.tag }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.schedulerService.service.targetPort }}
+              protocol: TCP
+          env:
+            {{- range $key, $value := .Values.schedulerService.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- with .Values.schedulerService.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: log-storage
+              mountPath: /usr/work/store
+          livenessProbe:
+            httpGet:
+              path: /scheduler/status
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /scheduler/status
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          {{- with .Values.extraVolumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            runAsUser: 0
+      volumes:
+        - name: log-storage
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scheduler-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: scheduler-service
+spec:
+  type: {{ .Values.schedulerService.service.type }}
+  ports:
+    - port: {{ .Values.schedulerService.service.port }}
+      targetPort: {{ .Values.schedulerService.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: scheduler-service
+{{- end }}
+---
+{{- if .Values.configService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sacunxt.fullname" . }}-config-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: config-service
+spec:
+  replicas: {{ .Values.configService.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: config-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: config-service
+    spec:
+      securityContext:
+        runAsUser: 0
+        fsGroup: 0
+      {{- include "sacunxt.imagePullSecrets" . | nindent 6 }}
+      {{- include "sacunxt.initContainers" . | nindent 6 }}
+      containers:
+        - name: config-service
+          image: {{ .Values.global.imageRegistry }}/{{ .Values.configService.image.repository }}:{{ .Values.configService.image.tag }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.configService.service.targetPort }}
+              protocol: TCP
+          env:
+            {{- range $key, $value := .Values.configService.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- with .Values.configService.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: log-storage
+              mountPath: /usr/work/store
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          {{- with .Values.extraVolumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            runAsUser: 0
+      volumes:
+        - name: log-storage
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: config-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: config-service
+spec:
+  type: {{ .Values.configService.service.type }}
+  ports:
+    - port: {{ .Values.configService.service.port }}
+      targetPort: {{ .Values.configService.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: config-service
+{{- end }}
+---
+{{- if .Values.collectorService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sacunxt.fullname" . }}-collector-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: collector-service
+spec:
+  replicas: {{ .Values.collectorService.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: collector-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: collector-service
+    spec:
+      securityContext:
+        runAsUser: 0
+        fsGroup: 0
+      {{- include "sacunxt.imagePullSecrets" . | nindent 6 }}
+      {{- include "sacunxt.initContainers" . | nindent 6 }}
+      containers:
+        - name: collector-service
+          image: {{ .Values.global.imageRegistry }}/{{ .Values.collectorService.image.repository }}:{{ .Values.collectorService.image.tag }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.collectorService.service.targetPort }}
+              protocol: TCP
+          env:
+            {{- range $key, $value := .Values.collectorService.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- with .Values.collectorService.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: log-storage
+              mountPath: /usr/work/store
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          {{- with .Values.extraVolumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            runAsUser: 0
+      volumes:
+        - name: log-storage
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: collector-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: collector-service
+spec:
+  type: {{ .Values.collectorService.service.type }}
+  ports:
+    - port: {{ .Values.collectorService.service.port }}
+      targetPort: {{ .Values.collectorService.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: collector-service
+{{- end }}
+---
+{{- if .Values.normalizerService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sacunxt.fullname" . }}-normalizer-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: normalizer-service
+spec:
+  replicas: {{ .Values.normalizerService.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: normalizer-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: normalizer-service
+    spec:
+      securityContext:
+        runAsUser: 0
+        fsGroup: 0
+      {{- include "sacunxt.imagePullSecrets" . | nindent 6 }}
+      {{- include "sacunxt.initContainers" . | nindent 6 }}
+      containers:
+        - name: normalizer-service
+          image: {{ .Values.global.imageRegistry }}/{{ .Values.normalizerService.image.repository }}:{{ .Values.normalizerService.image.tag }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.normalizerService.service.targetPort }}
+              protocol: TCP
+          env:
+            {{- range $key, $value := .Values.normalizerService.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- with .Values.normalizerService.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: log-storage
+              mountPath: /usr/work/store
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          {{- with .Values.extraVolumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            runAsUser: 0
+      volumes:
+        - name: log-storage
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: normalizer-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: normalizer-service
+spec:
+  type: {{ .Values.normalizerService.service.type }}
+  ports:
+    - port: {{ .Values.normalizerService.service.port }}
+      targetPort: {{ .Values.normalizerService.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: normalizer-service
+{{- end }}
+---
+{{- if .Values.publisherService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sacunxt.fullname" . }}-publisher-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: publisher-service
+spec:
+  replicas: {{ .Values.publisherService.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: publisher-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: publisher-service
+    spec:
+      securityContext:
+        runAsUser: 0
+        fsGroup: 0
+      {{- include "sacunxt.imagePullSecrets" . | nindent 6 }}
+      {{- include "sacunxt.initContainers" . | nindent 6 }}
+      containers:
+        - name: publisher-service
+          image: {{ .Values.global.imageRegistry }}/{{ .Values.publisherService.image.repository }}:{{ .Values.publisherService.image.tag }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          {{- if .Values.publisherService.command }}
+          command: {{ .Values.publisherService.command | toJson }}
+          {{- end }}
+          {{- if .Values.publisherService.workingDir }}
+          workingDir: {{ .Values.publisherService.workingDir }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.publisherService.service.targetPort }}
+              protocol: TCP
+          env:
+            {{- range $key, $value := .Values.publisherService.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- with .Values.publisherService.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: log-storage
+              mountPath: /usr/work/store
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          {{- with .Values.extraVolumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            runAsUser: 0
+      volumes:
+        - name: log-storage
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: publisher-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: publisher-service
+spec:
+  type: {{ .Values.publisherService.service.type }}
+  ports:
+    - port: {{ .Values.publisherService.service.port }}
+      targetPort: {{ .Values.publisherService.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: publisher-service
+{{- end }}
+---
+{{- if .Values.actionService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sacunxt.fullname" . }}-action-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: action-service
+spec:
+  replicas: {{ .Values.actionService.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: action-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: action-service
+    spec:
+      securityContext:
+        runAsUser: 0
+        fsGroup: 0
+      {{- include "sacunxt.imagePullSecrets" . | nindent 6 }}
+      {{- include "sacunxt.initContainers" . | nindent 6 }}
+      containers:
+        - name: action-service
+          image: {{ .Values.global.imageRegistry }}/{{ .Values.actionService.image.repository }}:{{ .Values.actionService.image.tag }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.actionService.service.targetPort }}
+              protocol: TCP
+          env:
+            {{- range $key, $value := .Values.actionService.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- with .Values.actionService.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: log-storage
+              mountPath: /usr/work/store
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          {{- with .Values.extraVolumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            runAsUser: 0
+      volumes:
+        - name: log-storage
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: action-service
+  namespace: {{ include "sacunxt.namespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: action-service
+spec:
+  type: {{ .Values.actionService.service.type }}
+  ports:
+    - port: {{ .Values.actionService.service.port }}
+      targetPort: {{ .Values.actionService.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: action-service
+{{- end }}

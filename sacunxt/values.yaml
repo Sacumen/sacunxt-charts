@@ -1,0 +1,353 @@
+# Global configuration
+global:
+  imageRegistry: "myregistry.azurecr.io"
+  imagePullPolicy: Always
+  storageClass: "standard"
+  namespace: "sacunxt"
+  imagePullSecrets: "acr-secret"
+  dockerConfigJson: ""
+
+# Secrets configuration
+secrets:
+  createACRSecret: true
+  copyToNamespaces:
+    - "sacunxt"
+  acr:
+    username: ""
+    password: ""
+# Database configuration
+postgresql:
+  enabled: true
+  namespace: "database"
+  serviceName: "postgres-service"
+  deploymentName: "sacunxt-postgresql"
+  auth:
+    username: "sacunxt"
+    password: "sacunxt_password"
+    database: "api_service"
+  primary:
+    persistence:
+      enabled: true
+      storageClass: "standard"
+      size: 5Gi
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+  service:
+    ports:
+      postgresql: 5432
+# Redis configuration
+redis:
+  enabled: true
+  namespace: "redis-cache"
+  serviceName: "redis"
+  deploymentName: "sacunxt-redis"
+  auth:
+    enabled: false
+  master:
+    persistence:
+      enabled: true
+      storageClass: "standard"
+      size: 5Gi
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "256Mi"
+        cpu: "200m"
+  service:
+    ports:
+      redis: 6379
+# Kafka configuration
+kafka:
+  enabled: true
+  namespace: "kafka-system"
+  serviceName: "kafka-service"
+  deploymentName: "sacunxt-kafka"
+  replicaCount: 1
+  zookeeper:
+    enabled: true
+    replicaCount: 1
+    persistence:
+      enabled: true
+      storageClass: "standard"
+      size: 5Gi
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "200m"
+      limits:
+        memory: "1Gi"
+        cpu: "400m"
+  persistence:
+    enabled: true
+    storageClass: "standard"
+    size: 20Gi
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "300m"
+    limits:
+      memory: "1Gi"
+      cpu: "600m"
+  service:
+    ports:
+      client: 9092
+  config: |
+    auto.create.topics.enable=true
+    delete.topic.enable=true
+    default.replication.factor=1
+    min.insync.replicas=1
+    num.partitions=3
+    offsets.topic.replication.factor=1
+    transaction.state.log.replication.factor=1
+    transaction.state.log.min.isr=1
+    log.retention.hours=168
+    log.retention.bytes=1073741824
+    log.segment.bytes=1073741824
+    message.max.bytes=20971520
+    replica.fetch.max.bytes=20971520
+    compression.type=producer
+    log.cleanup.policy=delete
+# API Service configuration
+apiService:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: sacunxt/api-service
+    tag: 2.1.0
+  service:
+    type: ClusterIP
+    port: 8000
+    targetPort: 8000
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "200m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  env:
+    STATUS: "http://scheduler-service.sacunxt.svc.cluster.local:8002/scheduler/status"
+    DB_HOST: "postgres-service.database.svc.cluster.local"
+    DB_PORT: "5432"
+    DB_USER: "sacunxt"
+    DB_PASSWORD: "sacunxt_password"
+    DB_NAME: "api_service"
+    PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
+# Scheduler Service configuration
+schedulerService:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: sacunxt/scheduler-service
+    tag: 2.1.0
+  service:
+    type: ClusterIP
+    port: 8002
+    targetPort: 8002
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "200m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  env:
+    REDIS_HOST: "redis.redis-cache.svc.cluster.local"
+    REDIS_PORT: "6379"
+    CONSUMER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
+    PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
+    TZ: "Asia/Kolkata"
+    SCHEDULER_RETRIES: "4"
+    DB_HOST: "postgres-service.database.svc.cluster.local"
+    DB_PORT: "5432"
+    DB_USER: "sacunxt"
+    DB_PASSWORD: "sacunxt_password"
+    DB_NAME: "api_service"
+# Config Service configuration
+configService:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: sacunxt/config-service
+    tag: 2.1.0
+  service:
+    type: ClusterIP
+    port: 8001
+    targetPort: 8001
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "200m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  env:
+    REDIS_HOST: "redis.redis-cache.svc.cluster.local"
+    REDIS_PORT: "6379"
+    CONSUMER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
+    PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
+    DB_HOST: "postgres-service.database.svc.cluster.local"
+    DB_PORT: "5432"
+    DB_USER: "sacunxt"
+    DB_PASSWORD: "sacunxt_password"
+    DB_NAME: "api_service"
+# Collector Service configuration
+collectorService:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: sacunxt/collector-service
+    tag: 2.1.0
+  service:
+    type: ClusterIP
+    port: 8003
+    targetPort: 8003
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "200m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  env:
+    REDIS_HOST: "redis.redis-cache.svc.cluster.local"
+    REDIS_PORT: "6379"
+    CONSUMER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
+    PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
+    MAX_PRODUCE_SIZE: "20971520"
+    DB_HOST: "postgres-service.database.svc.cluster.local"
+    DB_PORT: "5432"
+    DB_USER: "sacunxt"
+    DB_PASSWORD: "sacunxt_password"
+    DB_NAME: "api_service"
+# Normalizer Service configuration
+normalizerService:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: sacunxt/normalizer-service
+    tag: 2.1.0
+  service:
+    type: ClusterIP
+    port: 8004
+    targetPort: 8004
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "200m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  env:
+    REDIS_HOST: "redis.redis-cache.svc.cluster.local"
+    REDIS_PORT: "6379"
+    CONSUMER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
+    PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
+    MAX_PRODUCE_SIZE: "20971520"
+    DB_HOST: "postgres-service.database.svc.cluster.local"
+    DB_PORT: "5432"
+    DB_USER: "sacunxt"
+    DB_PASSWORD: "sacunxt_password"
+    DB_NAME: "api_service"
+# Publisher Service configuration
+publisherService:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: sacunxt/publisher-service
+    tag: 2.1.0
+  service:
+    type: ClusterIP
+    port: 8005
+    targetPort: 8005
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "200m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  command: ["python", "run.py"]
+  workingDir: "/app"
+  env:
+    HOST: "redis.redis-cache.svc.cluster.local"
+    PORT: "6379"
+    CONSUMER_HOST: "kafka-service.kafka-system.svc.cluster.local:9092"
+    PRODUCER_HOST: "kafka-service.kafka-system.svc.cluster.local:9092"
+    DB_HOST: "postgres-service.database.svc.cluster.local"
+    DB_PORT: "5432"
+    DB_USER: "sacunxt"
+    DB_PASSWORD: "sacunxt_password"
+    DB_NAME: "api_service"
+# Action Service configuration
+actionService:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: sacunxt/action-service
+    tag: 2.1.0
+  service:
+    type: ClusterIP
+    port: 8006
+    targetPort: 8006
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "200m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  env:
+    REDIS_HOST: "redis.redis-cache.svc.cluster.local"
+    REDIS_PORT: "6379"
+    CONSUMER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
+    PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
+    DB_HOST: "postgres-service.database.svc.cluster.local"
+    DB_PORT: "5432"
+    DB_USER: "sacunxt"
+    DB_PASSWORD: "sacunxt_password"
+    DB_NAME: "api_service"
+# ServiceMonitor for Prometheus monitoring
+serviceMonitor:
+  enabled: true
+  namespace: monitoring
+  interval: 30s
+  scrapeTimeout: 10s
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+# Network Policies
+networkPolicy:
+  enabled: true
+  policyTypes:
+    - Ingress
+    - Egress
+# Security Context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 2000
+# Pod Security Context
+podSecurityContext:
+  seccompProfile:
+    type: RuntimeDefault
+# Node Selector
+nodeSelector: {}
+# Tolerations
+tolerations: []
+# Affinity
+affinity: {}
+# Additional environment variables for all services
+extraEnvVars: []
+# Additional volumes for all services
+extraVolumes: []
+# Additional volume mounts for all services
+extraVolumeMounts: []

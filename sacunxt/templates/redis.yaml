@@ -1,0 +1,163 @@
+{{- if .Values.redis.enabled }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ include "sacunxt.redisNamespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.redis.deploymentName | default "sacunxt-redis" }}
+  namespace: {{ include "sacunxt.redisNamespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: redis
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: redis
+    spec:
+      securityContext:
+        runAsUser: 0
+        fsGroup: 0
+      {{- include "sacunxt.imagePullSecrets" . | nindent 6 }}
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: redis
+              containerPort: {{ .Values.redis.service.ports.redis }}
+              protocol: TCP
+          {{- if not .Values.redis.auth.enabled }}
+          command:
+            - redis-server
+            - --appendonly
+            - "no"
+            - --save
+            - ""
+          {{- else }}
+          env:
+            - name: REDIS_PASSWORD
+              value: {{ .Values.redis.auth.password | quote }}
+          command:
+            - redis-server
+            - --requirepass
+            - $(REDIS_PASSWORD)
+            - --appendonly
+            - "no"
+            - --save
+            - ""
+          {{- end }}
+          {{- with .Values.redis.master.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.redis.service.ports.redis }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.redis.service.ports.redis }}
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          {{- if .Values.redis.master.persistence.enabled }}
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+          {{- else }}
+          {{- with .Values.extraVolumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- end }}
+          securityContext:
+            runAsUser: 0
+      {{- if .Values.redis.master.persistence.enabled }}
+      volumes:
+        - name: redis-data
+          persistentVolumeClaim:
+            claimName: {{ include "sacunxt.fullname" . }}-redis-pvc
+      {{- else }}
+      {{- end }}
+---
+{{- if .Values.redis.master.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "sacunxt.fullname" . }}-redis-pvc
+  namespace: {{ include "sacunxt.redisNamespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: redis
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ .Values.redis.master.persistence.storageClass | default "standard" }}
+  resources:
+    requests:
+      storage: {{ .Values.redis.master.persistence.size }}
+---
+{{- end }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.redis.serviceName | default "redis" }}
+  namespace: {{ include "sacunxt.redisNamespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: redis
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: redis
+  ports:
+    - name: redis
+      port: {{ .Values.redis.service.ports.redis }}
+      targetPort: {{ .Values.redis.service.ports.redis }}
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "sacunxt.fullname" . }}-redis-headless
+  namespace: {{ include "sacunxt.redisNamespace" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: redis
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: {{ include "sacunxt.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: redis
+  ports:
+    - name: redis
+      port: {{ .Values.redis.service.ports.redis }}
+      targetPort: {{ .Values.redis.service.ports.redis }}
+      protocol: TCP
+{{- end }}
