@@ -9,7 +9,7 @@ global:
 
 # Secrets configuration
 secrets:
-  createACRSecret: true
+  createACRSecret: false
   copyToNamespaces:
     - "sacunxt"
   acr:
