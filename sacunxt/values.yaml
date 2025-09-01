@@ -120,7 +120,7 @@ apiService:
   replicaCount: 1
   image:
     repository: sacunxt/api-service
-    tag: 2.1.0
+    tag: 2.1.3
   service:
     type: ClusterIP
     port: 8000
@@ -140,13 +140,15 @@ apiService:
     DB_PASSWORD: "sacunxt_password"
     DB_NAME: "api_service"
     PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
+    INTEGRATION_TOPIC: "integrations"
+    ACTION_TOPIC: "actions"
 # Scheduler Service configuration
 schedulerService:
   enabled: true
   replicaCount: 1
   image:
     repository: sacunxt/scheduler-service
-    tag: 2.1.0
+    tag: 2.1.1
   service:
     type: ClusterIP
     port: 8002
@@ -170,13 +172,15 @@ schedulerService:
     DB_USER: "sacunxt"
     DB_PASSWORD: "sacunxt_password"
     DB_NAME: "api_service"
+    INGESTION_TOPIC: "ingestions"
+    JOBS_TOPIC: "jobs"
 # Config Service configuration
 configService:
   enabled: true
   replicaCount: 1
   image:
     repository: sacunxt/config-service
-    tag: 2.1.0
+    tag: 2.1.1
   service:
     type: ClusterIP
     port: 8001
@@ -198,13 +202,15 @@ configService:
     DB_USER: "sacunxt"
     DB_PASSWORD: "sacunxt_password"
     DB_NAME: "api_service"
+    INTEGRATION_TOPIC: "integrations"
+    INGESTION_TOPIC: "ingestions"
 # Collector Service configuration
 collectorService:
   enabled: true
   replicaCount: 1
   image:
     repository: sacunxt/collector-service
-    tag: 2.1.0
+    tag: 2.1.3
   service:
     type: ClusterIP
     port: 8003
@@ -227,13 +233,15 @@ collectorService:
     DB_USER: "sacunxt"
     DB_PASSWORD: "sacunxt_password"
     DB_NAME: "api_service"
+    RAW_DATA_TOPIC: "source_data"
+    JOBS_TOPIC: "jobs"
 # Normalizer Service configuration
 normalizerService:
   enabled: true
   replicaCount: 1
   image:
     repository: sacunxt/normalizer-service
-    tag: 2.1.0
+    tag: 2.1.2
   service:
     type: ClusterIP
     port: 8004
@@ -256,13 +264,15 @@ normalizerService:
     DB_USER: "sacunxt"
     DB_PASSWORD: "sacunxt_password"
     DB_NAME: "api_service"
+    RAW_DATA_TOPIC: "source_data"
+    NORMALIZED_DATA_TOPIC: "normalized_data"
 # Publisher Service configuration
 publisherService:
   enabled: true
   replicaCount: 1
   image:
     repository: sacunxt/publisher-service
-    tag: 2.1.0
+    tag: 2.1.2
   service:
     type: ClusterIP
     port: 8005
@@ -286,6 +296,7 @@ publisherService:
     DB_USER: "sacunxt"
     DB_PASSWORD: "sacunxt_password"
     DB_NAME: "api_service"
+    NORMALIZED_DATA_TOPIC: "normalized_data"
 # Action Service configuration
 actionService:
   enabled: true
@@ -314,6 +325,7 @@ actionService:
     DB_USER: "sacunxt"
     DB_PASSWORD: "sacunxt_password"
     DB_NAME: "api_service"
+    ACTION_TOPIC: "actions"
 # ServiceMonitor for Prometheus monitoring
 serviceMonitor:
   enabled: true
