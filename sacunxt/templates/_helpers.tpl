@@ -74,6 +74,7 @@ Init containers for dependency waiting
 */}}
 {{- define "sacunxt.initContainers" -}}
 initContainers:
+{{- if .Values.postgresql.enabled }}
   - name: wait-for-postgresql
     image: busybox:1.35
     command: ['sh', '-c']
@@ -84,6 +85,8 @@ initContainers:
           sleep 2
         done
         echo "PostgreSQL is ready!"
+{{- end }}
+{{- if .Values.redis.enabled }}
   - name: wait-for-redis
     image: busybox:1.35
     command: ['sh', '-c']
@@ -94,6 +97,8 @@ initContainers:
           sleep 2
         done
         echo "Redis is ready!"
+{{- end }}
+{{- if .Values.kafka.enabled }}
   - name: wait-for-kafka
     image: busybox:1.35
     command: ['sh', '-c']
@@ -104,4 +109,5 @@ initContainers:
           sleep 2
         done
         echo "Kafka is ready!"
+{{- end }}
 {{- end }}
