@@ -139,6 +139,7 @@ apiService:
     DB_USER: "sacunxt"
     DB_PASSWORD: "sacunxt_password"
     DB_NAME: "api_service"
+    SSL_MODE: "false"
     PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     INTEGRATION_TOPIC: "integrations"
     ACTION_TOPIC: "actions"
@@ -172,8 +173,10 @@ schedulerService:
     DB_USER: "sacunxt"
     DB_PASSWORD: "sacunxt_password"
     DB_NAME: "api_service"
+    SSL_MODE: "false"
     INGESTION_TOPIC: "ingestions"
     JOBS_TOPIC: "jobs"
+    RESULT_TOPIC: "results"
 # Config Service configuration
 configService:
   enabled: true
@@ -202,6 +205,7 @@ configService:
     DB_USER: "sacunxt"
     DB_PASSWORD: "sacunxt_password"
     DB_NAME: "api_service"
+    SSL_MODE: "false"
     INTEGRATION_TOPIC: "integrations"
     INGESTION_TOPIC: "ingestions"
 # Collector Service configuration
@@ -233,8 +237,10 @@ collectorService:
     DB_USER: "sacunxt"
     DB_PASSWORD: "sacunxt_password"
     DB_NAME: "api_service"
+    SSL_MODE: "false"
     RAW_DATA_TOPIC: "source_data"
     JOBS_TOPIC: "jobs"
+    STATUS_TOPIC: "service_status"
 # Normalizer Service configuration
 normalizerService:
   enabled: true
@@ -264,8 +270,10 @@ normalizerService:
     DB_USER: "sacunxt"
     DB_PASSWORD: "sacunxt_password"
     DB_NAME: "api_service"
+    SSL_MODE: "false"
     RAW_DATA_TOPIC: "source_data"
     NORMALIZED_DATA_TOPIC: "normalized_data"
+    STATUS_TOPIC: "service_status"
 # Publisher Service configuration
 publisherService:
   enabled: true
@@ -296,7 +304,9 @@ publisherService:
     DB_USER: "sacunxt"
     DB_PASSWORD: "sacunxt_password"
     DB_NAME: "api_service"
+    SSL_MODE: "false"
     NORMALIZED_DATA_TOPIC: "normalized_data"
+    STATUS_TOPIC: "service_status"
 # Action Service configuration
 actionService:
   enabled: true
@@ -325,6 +335,7 @@ actionService:
     DB_USER: "sacunxt"
     DB_PASSWORD: "sacunxt_password"
     DB_NAME: "api_service"
+    SSL_MODE: "false"
     ACTION_TOPIC: "actions"
 # ServiceMonitor for Prometheus monitoring
 serviceMonitor:
