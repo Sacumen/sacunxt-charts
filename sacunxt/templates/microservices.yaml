@@ -60,7 +60,7 @@ spec:
               mountPath: /usr/work/store
           livenessProbe:
             httpGet:
-              path: /health
+              path: /api/v1/metrics
               port: http
             initialDelaySeconds: 30
             periodSeconds: 10
@@ -68,7 +68,7 @@ spec:
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /ready
+              path: /api/v1/metrics
               port: http
             initialDelaySeconds: 10
             periodSeconds: 5
@@ -160,7 +160,7 @@ spec:
               mountPath: /usr/work/store
           livenessProbe:
             httpGet:
-              path: /scheduler/status
+              path: /scheduler/metrics
               port: http
             initialDelaySeconds: 30
             periodSeconds: 10
@@ -168,7 +168,7 @@ spec:
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /scheduler/status
+              path: /scheduler/metrics
               port: http
             initialDelaySeconds: 10
             periodSeconds: 5
@@ -259,14 +259,16 @@ spec:
             - name: log-storage
               mountPath: /usr/work/store
           livenessProbe:
-            tcpSocket:
+            httpGet:
+              path: /metrics
               port: http
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /metrics
               port: http
             initialDelaySeconds: 10
             periodSeconds: 5
@@ -357,14 +359,16 @@ spec:
             - name: log-storage
               mountPath: /usr/work/store
           livenessProbe:
-            tcpSocket:
+            httpGet:
+              path: /metrics
               port: http
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /metrics
               port: http
             initialDelaySeconds: 10
             periodSeconds: 5
@@ -455,14 +459,16 @@ spec:
             - name: log-storage
               mountPath: /usr/work/store
           livenessProbe:
-            tcpSocket:
+            httpGet:
+              path: /metrics
               port: http
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /metrics
               port: http
             initialDelaySeconds: 10
             periodSeconds: 5
@@ -559,14 +565,16 @@ spec:
             - name: log-storage
               mountPath: /usr/work/store
           livenessProbe:
-            tcpSocket:
+            httpGet:
+              path: /metrics
               port: http
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /metrics
               port: http
             initialDelaySeconds: 10
             periodSeconds: 5
@@ -657,14 +665,16 @@ spec:
             - name: log-storage
               mountPath: /usr/work/store
           livenessProbe:
-            tcpSocket:
+            httpGet:
+              path: /metrics
               port: http
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /metrics
               port: http
             initialDelaySeconds: 10
             periodSeconds: 5
