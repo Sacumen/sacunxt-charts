@@ -125,6 +125,20 @@ apiService:
     type: ClusterIP
     port: 8000
     targetPort: 8000
+  database:
+    host: "postgres-service.database.svc.cluster.local"
+    port: "5432"
+    username: "sacunxt"
+    name: "api_service"
+    schema: "public"  # Default schema, can be overridden per service
+    sslMode: "false"
+    # Plaintext password
+    password: "sacunxt_password"
+    # Or use a secret
+    # passwordSecret:
+    #   name: "api-db-secret"  # Name of the Kubernetes secret
+    #   key: "db-password"     # Key in the secret (defaults to "password")
+    #   optional: true         # Whether the secret is optional
   resources:
     requests:
       memory: "256Mi"
@@ -134,12 +148,6 @@ apiService:
       cpu: "500m"
   env:
     STATUS: "http://scheduler-service.sacunxt.svc.cluster.local:8002/scheduler/status"
-    DB_HOST: "postgres-service.database.svc.cluster.local"
-    DB_PORT: "5432"
-    DB_USER: "sacunxt"
-    DB_PASSWORD: "sacunxt_password"
-    DB_NAME: "api_service"
-    SSL_MODE: "false"
     PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     INTEGRATION_TOPIC: "integrations"
     ACTION_TOPIC: "actions"
@@ -154,6 +162,20 @@ schedulerService:
     type: ClusterIP
     port: 8002
     targetPort: 8002
+  database:
+    host: "postgres-service.database.svc.cluster.local"
+    port: "5432"
+    username: "sacunxt"
+    name: "api_service"
+    schema: "public"
+    sslMode: "false"
+    # Plaintext password
+    password: "sacunxt_password"
+    # Or use a secret
+    # passwordSecret:
+    #   name: "api-db-secret"  # Name of the Kubernetes secret
+    #   key: "db-password"     # Key in the secret (defaults to "password")
+    #   optional: true         # Whether the secret is optional
   resources:
     requests:
       memory: "256Mi"
@@ -168,12 +190,6 @@ schedulerService:
     PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     TZ: "Asia/Kolkata"
     SCHEDULER_RETRIES: "4"
-    DB_HOST: "postgres-service.database.svc.cluster.local"
-    DB_PORT: "5432"
-    DB_USER: "sacunxt"
-    DB_PASSWORD: "sacunxt_password"
-    DB_NAME: "api_service"
-    SSL_MODE: "false"
     INGESTION_TOPIC: "ingestions"
     JOBS_TOPIC: "jobs"
     RESULT_TOPIC: "results"
@@ -188,6 +204,20 @@ configService:
     type: ClusterIP
     port: 8001
     targetPort: 8001
+  database:
+    host: "postgres-service.database.svc.cluster.local"
+    port: "5432"
+    username: "sacunxt"
+    name: "api_service"
+    schema: "public"
+    sslMode: "false"
+    # Plaintext password
+    password: "sacunxt_password"
+    # Or use a secret
+    # passwordSecret:
+    #   name: "api-db-secret"  # Name of the Kubernetes secret
+    #   key: "db-password"     # Key in the secret (defaults to "password")
+    #   optional: true         # Whether the secret is optional
   resources:
     requests:
       memory: "256Mi"
@@ -200,12 +230,6 @@ configService:
     REDIS_PORT: "6379"
     CONSUMER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
-    DB_HOST: "postgres-service.database.svc.cluster.local"
-    DB_PORT: "5432"
-    DB_USER: "sacunxt"
-    DB_PASSWORD: "sacunxt_password"
-    DB_NAME: "api_service"
-    SSL_MODE: "false"
     INTEGRATION_TOPIC: "integrations"
     INGESTION_TOPIC: "ingestions"
 # Collector Service configuration
@@ -219,6 +243,20 @@ collectorService:
     type: ClusterIP
     port: 8003
     targetPort: 8003
+  database:
+    host: "postgres-service.database.svc.cluster.local"
+    port: "5432"
+    username: "sacunxt"
+    name: "api_service"
+    schema: "public"
+    sslMode: "false"
+    # Plaintext password
+    password: "sacunxt_password"
+    # Or use a secret
+    # passwordSecret:
+    #   name: "api-db-secret"  # Name of the Kubernetes secret
+    #   key: "db-password"     # Key in the secret (defaults to "password")
+    #   optional: true         # Whether the secret is optional
   resources:
     requests:
       memory: "256Mi"
@@ -232,12 +270,6 @@ collectorService:
     CONSUMER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     MAX_PRODUCE_SIZE: "20971520"
-    DB_HOST: "postgres-service.database.svc.cluster.local"
-    DB_PORT: "5432"
-    DB_USER: "sacunxt"
-    DB_PASSWORD: "sacunxt_password"
-    DB_NAME: "api_service"
-    SSL_MODE: "false"
     RAW_DATA_TOPIC: "source_data"
     JOBS_TOPIC: "jobs"
     STATUS_TOPIC: "service_status"
@@ -252,6 +284,20 @@ normalizerService:
     type: ClusterIP
     port: 8004
     targetPort: 8004
+  database:
+    host: "postgres-service.database.svc.cluster.local"
+    port: "5432"
+    username: "sacunxt"
+    name: "api_service"
+    schema: "public"
+    sslMode: "false"
+    # Plaintext password
+    password: "sacunxt_password"
+    # Or use a secret
+    # passwordSecret:
+    #   name: "api-db-secret"  # Name of the Kubernetes secret
+    #   key: "db-password"     # Key in the secret (defaults to "password")
+    #   optional: true         # Whether the secret is optional
   resources:
     requests:
       memory: "256Mi"
@@ -265,12 +311,6 @@ normalizerService:
     CONSUMER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     MAX_PRODUCE_SIZE: "20971520"
-    DB_HOST: "postgres-service.database.svc.cluster.local"
-    DB_PORT: "5432"
-    DB_USER: "sacunxt"
-    DB_PASSWORD: "sacunxt_password"
-    DB_NAME: "api_service"
-    SSL_MODE: "false"
     RAW_DATA_TOPIC: "source_data"
     NORMALIZED_DATA_TOPIC: "normalized_data"
     STATUS_TOPIC: "service_status"
@@ -285,6 +325,20 @@ publisherService:
     type: ClusterIP
     port: 8005
     targetPort: 8005
+  database:
+    host: "postgres-service.database.svc.cluster.local"
+    port: "5432"
+    username: "sacunxt"
+    name: "api_service"
+    schema: "public"
+    sslMode: "false"
+    # Plaintext password
+    password: "sacunxt_password"
+    # Or use a secret
+    # passwordSecret:
+    #   name: "api-db-secret"  # Name of the Kubernetes secret
+    #   key: "db-password"     # Key in the secret (defaults to "password")
+    #   optional: true         # Whether the secret is optional
   resources:
     requests:
       memory: "256Mi"
@@ -299,12 +353,6 @@ publisherService:
     PORT: "6379"
     CONSUMER_HOST: "kafka-service.kafka-system.svc.cluster.local:9092"
     PRODUCER_HOST: "kafka-service.kafka-system.svc.cluster.local:9092"
-    DB_HOST: "postgres-service.database.svc.cluster.local"
-    DB_PORT: "5432"
-    DB_USER: "sacunxt"
-    DB_PASSWORD: "sacunxt_password"
-    DB_NAME: "api_service"
-    SSL_MODE: "false"
     NORMALIZED_DATA_TOPIC: "normalized_data"
     STATUS_TOPIC: "service_status"
 # Action Service configuration
@@ -318,6 +366,20 @@ actionService:
     type: ClusterIP
     port: 8006
     targetPort: 8006
+  database:
+    host: "postgres-service.database.svc.cluster.local"
+    port: "5432"
+    username: "sacunxt"
+    name: "api_service"
+    schema: "public"
+    sslMode: "false"
+    # Plaintext password
+    password: "sacunxt_password"
+    # Or use a secret
+    # passwordSecret:
+    #   name: "api-db-secret"  # Name of the Kubernetes secret
+    #   key: "db-password"     # Key in the secret (defaults to "password")
+    #   optional: true         # Whether the secret is optional
   resources:
     requests:
       memory: "256Mi"
@@ -330,12 +392,6 @@ actionService:
     REDIS_PORT: "6379"
     CONSUMER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
-    DB_HOST: "postgres-service.database.svc.cluster.local"
-    DB_PORT: "5432"
-    DB_USER: "sacunxt"
-    DB_PASSWORD: "sacunxt_password"
-    DB_NAME: "api_service"
-    SSL_MODE: "false"
     ACTION_TOPIC: "actions"
 # ServiceMonitor for Prometheus monitoring
 serviceMonitor:

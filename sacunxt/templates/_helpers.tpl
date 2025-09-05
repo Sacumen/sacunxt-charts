@@ -49,6 +49,39 @@ Create namespace name for microservices
 {{- end }}
 
 {{/*
+Create database environment variables for a service
+Usage: {{ include "sacunxt.dbEnvVars" (dict "Values" .Values "service" .Values.apiService) }}
+*/}}
+{{- define "sacunxt.dbEnvVars" -}}
+{{- $service := .service -}}
+{{- if $service.database -}}
+- name: DB_HOST
+  value: {{ $service.database.host | default "postgres-service.database.svc.cluster.local" | quote }}
+- name: DB_PORT
+  value: {{ $service.database.port | default "5432" | quote }}
+- name: DB_USER
+  value: {{ $service.database.username | quote }}
+- name: DB_NAME
+  value: {{ $service.database.name | quote }}
+- name: DB_SCHEMA
+  value: {{ $service.database.schema | quote }}
+- name: SSL_MODE
+  value: {{ $service.database.sslMode | default "false" | quote }}
+{{- if $service.database.passwordSecret }}
+- name: DB_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: {{ $service.database.passwordSecret.name | quote }}
+      key: {{ $service.database.passwordSecret.key | default "password" | quote }}
+      optional: {{ $service.database.passwordSecret.optional | default true }}
+{{- else if $service.database.password }}
+- name: DB_PASSWORD
+  value: {{ $service.database.password | quote }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
 Create namespace name for Redis
 */}}
 {{- define "sacunxt.redisNamespace" -}}

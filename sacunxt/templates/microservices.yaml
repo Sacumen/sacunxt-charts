@@ -44,6 +44,9 @@ spec:
               containerPort: {{ .Values.apiService.service.targetPort }}
               protocol: TCP
           env:
+            # Include database environment variables
+            {{- include "sacunxt.dbEnvVars" (dict "Values" .Values "service" .Values.apiService) | nindent 12 }}
+            # Include service-specific environment variables
             {{- range $key, $value := .Values.apiService.env }}
             - name: {{ $key }}
               value: {{ $value | quote }}
@@ -141,6 +144,9 @@ spec:
               containerPort: {{ .Values.schedulerService.service.targetPort }}
               protocol: TCP
           env:
+            # Include database environment variables
+            {{- include "sacunxt.dbEnvVars" (dict "Values" .Values "service" .Values.schedulerService) | nindent 12 }}
+            # Include service-specific environment variables
             {{- range $key, $value := .Values.schedulerService.env }}
             - name: {{ $key }}
               value: {{ $value | quote }}
@@ -238,6 +244,9 @@ spec:
               containerPort: {{ .Values.configService.service.targetPort }}
               protocol: TCP
           env:
+            # Include database environment variables
+            {{- include "sacunxt.dbEnvVars" (dict "Values" .Values "service" .Values.configService) | nindent 12 }}
+            # Include service-specific environment variables
             {{- range $key, $value := .Values.configService.env }}
             - name: {{ $key }}
               value: {{ $value | quote }}
@@ -333,6 +342,9 @@ spec:
               containerPort: {{ .Values.collectorService.service.targetPort }}
               protocol: TCP
           env:
+            # Include database environment variables
+            {{- include "sacunxt.dbEnvVars" (dict "Values" .Values "service" .Values.collectorService) | nindent 12 }}
+            # Include service-specific environment variables
             {{- range $key, $value := .Values.collectorService.env }}
             - name: {{ $key }}
               value: {{ $value | quote }}
@@ -428,6 +440,9 @@ spec:
               containerPort: {{ .Values.normalizerService.service.targetPort }}
               protocol: TCP
           env:
+            # Include database environment variables
+            {{- include "sacunxt.dbEnvVars" (dict "Values" .Values "service" .Values.normalizerService) | nindent 12 }}
+            # Include service-specific environment variables
             {{- range $key, $value := .Values.normalizerService.env }}
             - name: {{ $key }}
               value: {{ $value | quote }}
@@ -529,6 +544,9 @@ spec:
               containerPort: {{ .Values.publisherService.service.targetPort }}
               protocol: TCP
           env:
+            # Include database environment variables
+            {{- include "sacunxt.dbEnvVars" (dict "Values" .Values "service" .Values.publisherService) | nindent 12 }}
+            # Include service-specific environment variables
             {{- range $key, $value := .Values.publisherService.env }}
             - name: {{ $key }}
               value: {{ $value | quote }}
@@ -624,6 +642,9 @@ spec:
               containerPort: {{ .Values.actionService.service.targetPort }}
               protocol: TCP
           env:
+            # Include database environment variables
+            {{- include "sacunxt.dbEnvVars" (dict "Values" .Values "service" .Values.actionService) | nindent 12 }}
+            # Include service-specific environment variables
             {{- range $key, $value := .Values.actionService.env }}
             - name: {{ $key }}
               value: {{ $value | quote }}
