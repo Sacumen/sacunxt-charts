@@ -6,6 +6,7 @@ global:
   namespace: "sacunxt"
   imagePullSecrets: "acr-secret"
   dockerConfigJson: ""
+  logLevel: "WARN"  # Default log level for all services
 
 # Secrets configuration
 secrets:
@@ -151,6 +152,7 @@ apiService:
     PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     INTEGRATION_TOPIC: "integrations"
     ACTION_TOPIC: "actions"
+    LOG_LEVEL: "{{ .Values.global.logLevel }}"
 # Scheduler Service configuration
 schedulerService:
   enabled: true
@@ -193,6 +195,7 @@ schedulerService:
     INGESTION_TOPIC: "ingestions"
     JOBS_TOPIC: "jobs"
     RESULT_TOPIC: "results"
+    LOG_LEVEL: "{{ .Values.global.logLevel }}"
 # Config Service configuration
 configService:
   enabled: true
@@ -232,6 +235,7 @@ configService:
     PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     INTEGRATION_TOPIC: "integrations"
     INGESTION_TOPIC: "ingestions"
+    LOG_LEVEL: "{{ .Values.global.logLevel }}"
 # Collector Service configuration
 collectorService:
   enabled: true
@@ -273,6 +277,7 @@ collectorService:
     RAW_DATA_TOPIC: "source_data"
     JOBS_TOPIC: "jobs"
     STATUS_TOPIC: "service_status"
+    LOG_LEVEL: "{{ .Values.global.logLevel }}"
 # Normalizer Service configuration
 normalizerService:
   enabled: true
@@ -314,6 +319,7 @@ normalizerService:
     RAW_DATA_TOPIC: "source_data"
     NORMALIZED_DATA_TOPIC: "normalized_data"
     STATUS_TOPIC: "service_status"
+    LOG_LEVEL: "{{ .Values.global.logLevel }}"
 # Publisher Service configuration
 publisherService:
   enabled: true
@@ -355,6 +361,7 @@ publisherService:
     PRODUCER_HOST: "kafka-service.kafka-system.svc.cluster.local:9092"
     NORMALIZED_DATA_TOPIC: "normalized_data"
     STATUS_TOPIC: "service_status"
+    LOG_LEVEL: "{{ .Values.global.logLevel }}"
 # Action Service configuration
 actionService:
   enabled: true
@@ -393,6 +400,7 @@ actionService:
     CONSUMER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     ACTION_TOPIC: "actions"
+    LOG_LEVEL: "{{ .Values.global.logLevel }}"
 # ServiceMonitor for Prometheus monitoring
 serviceMonitor:
   enabled: true
