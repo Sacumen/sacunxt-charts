@@ -2,8 +2,8 @@ apiVersion: v2
 name: sacunxt
 description: A Helm chart for SacuNXT Connector Framework - Complete microservices deployment
 type: application
-version: 2.1.5
-appVersion: "2.1.5"
+version: 2.1.6
+appVersion: "2.1.6"
 keywords:
   - sacunxt
   - connector
