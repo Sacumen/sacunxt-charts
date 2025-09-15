@@ -284,7 +284,7 @@ normalizerService:
   replicaCount: 1
   image:
     repository: sacunxt/normalizer-service
-    tag: 2.1.4
+    tag: 2.1.5
   service:
     type: ClusterIP
     port: 8004
