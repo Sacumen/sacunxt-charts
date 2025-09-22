@@ -195,6 +195,7 @@ schedulerService:
     INGESTION_TOPIC: "ingestions"
     JOBS_TOPIC: "jobs"
     RESULT_TOPIC: "results"
+    RECOVER_JOB: "true"
     LOG_LEVEL: "{{ .Values.global.logLevel }}"
 # Config Service configuration
 configService:
@@ -284,7 +285,7 @@ normalizerService:
   replicaCount: 1
   image:
     repository: sacunxt/normalizer-service
-    tag: 2.1.8
+    tag: 2.1.9
   service:
     type: ClusterIP
     port: 8004
