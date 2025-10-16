@@ -539,12 +539,6 @@ spec:
         - name: publisher-service
           image: {{ .Values.global.imageRegistry }}/{{ .Values.publisherService.image.repository }}:{{ .Values.publisherService.image.tag }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
-          {{- if .Values.publisherService.command }}
-          command: {{ .Values.publisherService.command | toJson }}
-          {{- end }}
-          {{- if .Values.publisherService.workingDir }}
-          workingDir: {{ .Values.publisherService.workingDir }}
-          {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.publisherService.service.targetPort }}

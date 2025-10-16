@@ -359,13 +359,11 @@ publisherService:
     limits:
       memory: "512Mi"
       cpu: "500m"
-  command: ["python", "run.py"]
-  workingDir: "/app"
   env:
-    HOST: "redis.redis-cache.svc.cluster.local"
-    PORT: "6379"
-    CONSUMER_HOST: "kafka-service.kafka-system.svc.cluster.local:9092"
-    PRODUCER_HOST: "kafka-service.kafka-system.svc.cluster.local:9092"
+    REDIS_HOST: "redis.redis-cache.svc.cluster.local"
+    REDIS_PORT: "6379"
+    CONSUMER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
+    PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     NORMALIZED_DATA_TOPIC: "normalized_data"
     STATUS_TOPIC: "service_status"
     LOG_LEVEL: "{{ .Values.global.logLevel }}"
