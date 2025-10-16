@@ -121,7 +121,7 @@ apiService:
   replicaCount: 1
   image:
     repository: sacunxt/api-service
-    tag: 2.1.4
+    tag: 2.2.2
   service:
     type: ClusterIP
     port: 8000
@@ -159,7 +159,7 @@ schedulerService:
   replicaCount: 1
   image:
     repository: sacunxt/scheduler-service
-    tag: 2.1.3
+    tag: 2.2.1
   service:
     type: ClusterIP
     port: 8002
@@ -196,6 +196,7 @@ schedulerService:
     JOBS_TOPIC: "jobs"
     RESULT_TOPIC: "results"
     RECOVER_JOB: "true"
+    STOP_ON_FAILURE: "true"
     LOG_LEVEL: "{{ .Values.global.logLevel }}"
 # Config Service configuration
 configService:
@@ -203,7 +204,7 @@ configService:
   replicaCount: 1
   image:
     repository: sacunxt/config-service
-    tag: 2.1.2
+    tag: 2.2.0
   service:
     type: ClusterIP
     port: 8001
@@ -243,7 +244,7 @@ collectorService:
   replicaCount: 1
   image:
     repository: sacunxt/collector-service
-    tag: 2.1.7
+    tag: 2.2.1
   service:
     type: ClusterIP
     port: 8003
@@ -285,7 +286,7 @@ normalizerService:
   replicaCount: 1
   image:
     repository: sacunxt/normalizer-service
-    tag: 2.1.9
+    tag: 2.2.0
   service:
     type: ClusterIP
     port: 8004
@@ -327,7 +328,7 @@ publisherService:
   replicaCount: 1
   image:
     repository: sacunxt/publisher-service
-    tag: 2.1.4
+    tag: 2.2.1
   service:
     type: ClusterIP
     port: 8005
