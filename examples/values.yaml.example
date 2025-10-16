@@ -10,6 +10,7 @@ global:
   namespace: "sacunxt"
   imagePullSecrets: "acr-secret"
   dockerConfigJson: ""
+  logLevel: "WARN"  # Default log level for all services
 
 # Secrets configuration
 secrets:
@@ -20,12 +21,6 @@ secrets:
     username: ""
     password: ""
 
-# Common labels
-commonLabels:
-  app.kubernetes.io/name: sacunxt
-  app.kubernetes.io/instance: sacunxt
-  app.kubernetes.io/version: "1.0.0"
-  app.kubernetes.io/managed-by: helm
 # Database configuration
 postgresql:
   enabled: true
@@ -55,6 +50,8 @@ postgresql:
 redis:
   enabled: true
   namespace: "redis-cache"
+  serviceName: "redis"
+  deploymentName: "sacunxt-redis"
   auth:
     enabled: false
   master:
@@ -76,6 +73,8 @@ redis:
 kafka:
   enabled: true
   namespace: "kafka-system"
+  serviceName: "kafka-service"
+  deploymentName: "sacunxt-kafka"
   replicaCount: 1
   zookeeper:
     enabled: true
@@ -86,10 +85,10 @@ kafka:
       size: 5Gi
     resources:
       requests:
-        memory: "256Mi"
+        memory: "512Mi"
         cpu: "200m"
       limits:
-        memory: "512Mi"
+        memory: "1Gi"
         cpu: "400m"
   persistence:
     enabled: true
@@ -127,7 +126,7 @@ apiService:
   replicaCount: 1
   image:
     repository: sacunxt/api-service
-    tag: 2.1.3
+    tag: 2.2.2
   service:
     type: ClusterIP
     port: 8000
@@ -158,13 +157,14 @@ apiService:
     PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     INTEGRATION_TOPIC: "integrations"
     ACTION_TOPIC: "actions"
+    LOG_LEVEL: "{{ .Values.global.logLevel }}"
 # Scheduler Service Configuration
 schedulerService:
   enabled: true
   replicaCount: 1
   image:
     repository: sacunxt/scheduler-service
-    tag: 2.1.1
+    tag: 2.2.1
   service:
     type: ClusterIP
     port: 8002
@@ -173,7 +173,7 @@ schedulerService:
     host: "postgres-service.database.svc.cluster.local"
     port: "5432"
     username: "sacunxt"
-    name: "scheduler_service"
+    name: "api_service"
     schema: "public"
     sslMode: "false"
     # Plaintext password
@@ -199,13 +199,17 @@ schedulerService:
     SCHEDULER_RETRIES: "4"
     INGESTION_TOPIC: "ingestions"
     JOBS_TOPIC: "jobs"
+    RESULT_TOPIC: "results"
+    RECOVER_JOB: "true"
+    STOP_ON_FAILURE: "true"
+    LOG_LEVEL: "{{ .Values.global.logLevel }}"
 # Config Service Configuration
 configService:
   enabled: true
   replicaCount: 1
   image:
     repository: sacunxt/config-service
-    tag: 2.1.1
+    tag: 2.2.0
   service:
     type: ClusterIP
     port: 8001
@@ -214,7 +218,7 @@ configService:
     host: "postgres-service.database.svc.cluster.local"
     port: "5432"
     username: "sacunxt"
-    name: "config_service"
+    name: "api_service"
     schema: "public"
     sslMode: "false"
     # Plaintext password
@@ -238,13 +242,14 @@ configService:
     PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     INTEGRATION_TOPIC: "integrations"
     INGESTION_TOPIC: "ingestions"
+    LOG_LEVEL: "{{ .Values.global.logLevel }}"
 # Collector Service Configuration
 collectorService:
   enabled: true
   replicaCount: 1
   image:
     repository: sacunxt/collector-service
-    tag: 2.1.3
+    tag: 2.2.1
   service:
     type: ClusterIP
     port: 8003
@@ -253,7 +258,7 @@ collectorService:
     host: "postgres-service.database.svc.cluster.local"
     port: "5432"
     username: "sacunxt"
-    name: "collector_service"
+    name: "api_service"
     schema: "public"
     sslMode: "false"
     # Plaintext password
@@ -278,13 +283,15 @@ collectorService:
     MAX_PRODUCE_SIZE: "20971520"
     RAW_DATA_TOPIC: "source_data"
     JOBS_TOPIC: "jobs"
+    STATUS_TOPIC: "service_status"
+    LOG_LEVEL: "{{ .Values.global.logLevel }}"
 # Normalizer Service Configuration
 normalizerService:
   enabled: true
   replicaCount: 1
   image:
     repository: sacunxt/normalizer-service
-    tag: 2.1.2
+    tag: 2.2.0
   service:
     type: ClusterIP
     port: 8004
@@ -293,7 +300,7 @@ normalizerService:
     host: "postgres-service.database.svc.cluster.local"
     port: "5432"
     username: "sacunxt"
-    name: "normalizer_service"
+    name: "api_service"
     schema: "public"
     sslMode: "false"
     # Plaintext password
@@ -318,13 +325,15 @@ normalizerService:
     MAX_PRODUCE_SIZE: "20971520"
     RAW_DATA_TOPIC: "source_data"
     NORMALIZED_DATA_TOPIC: "normalized_data"
+    STATUS_TOPIC: "service_status"
+    LOG_LEVEL: "{{ .Values.global.logLevel }}"
 # Publisher Service Configuration
 publisherService:
   enabled: true
   replicaCount: 1
   image:
     repository: sacunxt/publisher-service
-    tag: 2.1.2
+    tag: 2.2.1
   service:
     type: ClusterIP
     port: 8005
@@ -333,7 +342,7 @@ publisherService:
     host: "postgres-service.database.svc.cluster.local"
     port: "5432"
     username: "sacunxt"
-    name: "publisher_service"
+    name: "api_service"
     schema: "public"
     sslMode: "false"
     # Plaintext password
@@ -353,11 +362,13 @@ publisherService:
   command: ["python", "run.py"]
   workingDir: "/app"
   env:
-    REDIS_HOST: "redis.redis-cache.svc.cluster.local"
-    REDIS_PORT: "6379"
-    CONSUMER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
-    PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
+    HOST: "redis.redis-cache.svc.cluster.local"
+    PORT: "6379"
+    CONSUMER_HOST: "kafka-service.kafka-system.svc.cluster.local:9092"
+    PRODUCER_HOST: "kafka-service.kafka-system.svc.cluster.local:9092"
     NORMALIZED_DATA_TOPIC: "normalized_data"
+    STATUS_TOPIC: "service_status"
+    LOG_LEVEL: "{{ .Values.global.logLevel }}"
 # Action Service Configuration
 actionService:
   enabled: true
@@ -373,7 +384,7 @@ actionService:
     host: "postgres-service.database.svc.cluster.local"
     port: "5432"
     username: "sacunxt"
-    name: "action_service"
+    name: "api_service"
     schema: "public"
     sslMode: "false"
     # Plaintext password
@@ -394,17 +405,12 @@ actionService:
     REDIS_HOST: "redis.redis-cache.svc.cluster.local"
     REDIS_PORT: "6379"
     CONSUMER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
+    PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     ACTION_TOPIC: "actions"
-# Autoscaling Configuration
-autoscaling:
-  enabled: false
-  minReplicas: 1
-  maxReplicas: 100
-  targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
+    LOG_LEVEL: "{{ .Values.global.logLevel }}"
 # ServiceMonitor for Prometheus monitoring
 serviceMonitor:
-  enabled: false
+  enabled: true
   namespace: monitoring
   interval: 30s
   scrapeTimeout: 10s
@@ -414,7 +420,7 @@ podDisruptionBudget:
   minAvailable: 1
 # Network Policies
 networkPolicy:
-  enabled: false
+  enabled: true
   policyTypes:
     - Ingress
     - Egress
