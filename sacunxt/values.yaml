@@ -159,7 +159,7 @@ schedulerService:
   replicaCount: 1
   image:
     repository: sacunxt/scheduler-service
-    tag: 2.2.1
+    tag: 2.2.2
   service:
     type: ClusterIP
     port: 8002
@@ -204,7 +204,7 @@ configService:
   replicaCount: 1
   image:
     repository: sacunxt/config-service
-    tag: 2.2.0
+    tag: 2.2.1
   service:
     type: ClusterIP
     port: 8001
@@ -244,7 +244,7 @@ collectorService:
   replicaCount: 1
   image:
     repository: sacunxt/collector-service
-    tag: 2.2.1
+    tag: 2.2.2
   service:
     type: ClusterIP
     port: 8003
@@ -286,7 +286,7 @@ normalizerService:
   replicaCount: 1
   image:
     repository: sacunxt/normalizer-service
-    tag: 2.2.0
+    tag: 2.2.1
   service:
     type: ClusterIP
     port: 8004
@@ -328,7 +328,7 @@ publisherService:
   replicaCount: 1
   image:
     repository: sacunxt/publisher-service
-    tag: 2.2.1
+    tag: 2.2.3
   service:
     type: ClusterIP
     port: 8005
