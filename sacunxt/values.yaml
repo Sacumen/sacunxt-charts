@@ -6,7 +6,7 @@ global:
   namespace: "sacunxt"
   imagePullSecrets: "acr-secret"
   dockerConfigJson: ""
-  logLevel: "WARN"  # Default log level for all services
+  logLevel: "DEBUG"  # Default log level for all services
 
 # Secrets configuration
 secrets:
@@ -159,7 +159,7 @@ schedulerService:
   replicaCount: 1
   image:
     repository: sacunxt/scheduler-service
-    tag: 2.2.2
+    tag: 2.2.3
   service:
     type: ClusterIP
     port: 8002
@@ -191,12 +191,12 @@ schedulerService:
     CONSUMER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     TZ: "Asia/Kolkata"
-    SCHEDULER_RETRIES: "4"
+    SCHEDULER_RETRIES: "1"
     INGESTION_TOPIC: "ingestions"
     JOBS_TOPIC: "jobs"
     RESULT_TOPIC: "results"
     RECOVER_JOB: "true"
-    STOP_ON_FAILURE: "true"
+    STOP_ON_FAILURE: "false"
     LOG_LEVEL: "{{ .Values.global.logLevel }}"
 # Config Service configuration
 configService:
