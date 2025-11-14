@@ -249,7 +249,7 @@ collectorService:
   replicaCount: 1
   image:
     repository: sacunxt/collector-service
-    tag: 2.2.2
+    tag: 2.2.3
   service:
     type: ClusterIP
     port: 8003
@@ -333,7 +333,7 @@ publisherService:
   replicaCount: 1
   image:
     repository: sacunxt/publisher-service
-    tag: 2.2.3
+    tag: 2.2.4
   service:
     type: ClusterIP
     port: 8005
