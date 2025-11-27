@@ -117,7 +117,7 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/component: scheduler-service
 spec:
-  replicas: {{ .Values.schedulerService.replicaCount }}
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "sacunxt.name" . }}
@@ -217,7 +217,7 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/component: config-service
 spec:
-  replicas: {{ .Values.configService.replicaCount }}
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "sacunxt.name" . }}
