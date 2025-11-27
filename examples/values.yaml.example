@@ -38,10 +38,10 @@ postgresql:
       size: 5Gi
     resources:
       requests:
-        memory: "256Mi"
+        memory: "512Mi"
         cpu: "250m"
       limits:
-        memory: "512Mi"
+        memory: "1Gi"
         cpu: "500m"
   service:
     ports:
@@ -61,10 +61,10 @@ redis:
       size: 5Gi
     resources:
       requests:
-        memory: "128Mi"
+        memory: "512Mi"
         cpu: "100m"
       limits:
-        memory: "256Mi"
+        memory: "1Gi"
         cpu: "200m"
   service:
     ports:
@@ -123,10 +123,9 @@ kafka:
 # API Service configuration
 apiService:
   enabled: true
-  replicaCount: 1
   image:
     repository: sacunxt/api-service
-    tag: 2.2.5
+    tag: 2.2.6
   service:
     type: ClusterIP
     port: 8000
@@ -147,10 +146,10 @@ apiService:
     #   optional: true         # Whether the secret is optional
   resources:
     requests:
-      memory: "256Mi"
+      memory: "512Mi"
       cpu: "200m"
     limits:
-      memory: "512Mi"
+      memory: "1536Mi"
       cpu: "500m"
   env:
     STATUS: "http://scheduler-service.sacunxt.svc.cluster.local:8002/scheduler/status"
@@ -161,10 +160,9 @@ apiService:
 # Scheduler Service configuration
 schedulerService:
   enabled: true
-  replicaCount: 1
   image:
     repository: sacunxt/scheduler-service
-    tag: 2.2.3
+    tag: 2.2.4
   service:
     type: ClusterIP
     port: 8002
@@ -185,10 +183,10 @@ schedulerService:
     #   optional: true         # Whether the secret is optional
   resources:
     requests:
-      memory: "256Mi"
+      memory: "512Mi"
       cpu: "200m"
     limits:
-      memory: "512Mi"
+      memory: "1536Mi"
       cpu: "500m"
   env:
     REDIS_HOST: "redis.redis-cache.svc.cluster.local"
@@ -206,10 +204,9 @@ schedulerService:
 # Config Service configuration
 configService:
   enabled: true
-  replicaCount: 1
   image:
     repository: sacunxt/config-service
-    tag: 2.2.1
+    tag: 2.2.2
   service:
     type: ClusterIP
     port: 8001
@@ -230,10 +227,10 @@ configService:
     #   optional: true         # Whether the secret is optional
   resources:
     requests:
-      memory: "256Mi"
+      memory: "512Mi"
       cpu: "200m"
     limits:
-      memory: "512Mi"
+      memory: "1536Mi"
       cpu: "500m"
   env:
     REDIS_HOST: "redis.redis-cache.svc.cluster.local"
@@ -249,7 +246,7 @@ collectorService:
   replicaCount: 1
   image:
     repository: sacunxt/collector-service
-    tag: 2.2.3
+    tag: 2.2.4
   service:
     type: ClusterIP
     port: 8003
@@ -270,10 +267,10 @@ collectorService:
     #   optional: true         # Whether the secret is optional
   resources:
     requests:
-      memory: "256Mi"
+      memory: "512Mi"
       cpu: "200m"
     limits:
-      memory: "512Mi"
+      memory: "1536Mi"
       cpu: "500m"
   env:
     REDIS_HOST: "redis.redis-cache.svc.cluster.local"
@@ -291,7 +288,7 @@ normalizerService:
   replicaCount: 1
   image:
     repository: sacunxt/normalizer-service
-    tag: 2.2.1
+    tag: 2.2.3
   service:
     type: ClusterIP
     port: 8004
@@ -312,10 +309,10 @@ normalizerService:
     #   optional: true         # Whether the secret is optional
   resources:
     requests:
-      memory: "256Mi"
+      memory: "512Mi"
       cpu: "200m"
     limits:
-      memory: "512Mi"
+      memory: "1536Mi"
       cpu: "500m"
   env:
     REDIS_HOST: "redis.redis-cache.svc.cluster.local"
@@ -333,7 +330,7 @@ publisherService:
   replicaCount: 1
   image:
     repository: sacunxt/publisher-service
-    tag: 2.2.4
+    tag: 2.2.5
   service:
     type: ClusterIP
     port: 8005
@@ -354,10 +351,10 @@ publisherService:
     #   optional: true         # Whether the secret is optional
   resources:
     requests:
-      memory: "256Mi"
+      memory: "512Mi"
       cpu: "200m"
     limits:
-      memory: "512Mi"
+      memory: "1536Mi"
       cpu: "500m"
   env:
     REDIS_HOST: "redis.redis-cache.svc.cluster.local"
@@ -394,10 +391,10 @@ actionService:
     #   optional: true         # Whether the secret is optional
   resources:
     requests:
-      memory: "256Mi"
+      memory: "512Mi"
       cpu: "200m"
     limits:
-      memory: "512Mi"
+      memory: "1536Mi"
       cpu: "500m"
   env:
     REDIS_HOST: "redis.redis-cache.svc.cluster.local"
