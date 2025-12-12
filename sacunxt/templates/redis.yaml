@@ -46,9 +46,9 @@ spec:
           command:
             - redis-server
             - --appendonly
-            - "no"
-            - --save
-            - ""
+            - "yes"
+            - --dir
+            - /data
           {{- else }}
           env:
             - name: REDIS_PASSWORD
@@ -58,9 +58,9 @@ spec:
             - --requirepass
             - $(REDIS_PASSWORD)
             - --appendonly
-            - "no"
-            - --save
-            - ""
+            - "yes"
+            - --dir
+            - /data
           {{- end }}
           {{- with .Values.redis.master.resources }}
           resources:

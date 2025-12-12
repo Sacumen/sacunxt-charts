@@ -22,6 +22,8 @@ postgresql:
   namespace: "database"
   serviceName: "postgres-service"
   deploymentName: "sacunxt-postgresql"
+  # Connection settings - increase for multiple microservices
+  maxConnections: 200
   auth:
     username: "sacunxt"
     password: "sacunxt_password"
@@ -121,7 +123,7 @@ apiService:
   replicaCount: 1
   image:
     repository: sacunxt/api-service
-    tag: 2.2.6
+    tag: 2.2.7
   service:
     type: ClusterIP
     port: 8000
@@ -158,7 +160,7 @@ schedulerService:
   enabled: true
   image:
     repository: sacunxt/scheduler-service
-    tag: 2.2.4
+    tag: 2.2.5
   service:
     type: ClusterIP
     port: 8002
@@ -202,7 +204,7 @@ configService:
   enabled: true
   image:
     repository: sacunxt/config-service
-    tag: 2.2.2
+    tag: 2.2.3
   service:
     type: ClusterIP
     port: 8001
@@ -242,7 +244,7 @@ collectorService:
   replicaCount: 1
   image:
     repository: sacunxt/collector-service
-    tag: 2.2.4
+    tag: 2.2.5
   service:
     type: ClusterIP
     port: 8003
@@ -284,7 +286,7 @@ normalizerService:
   replicaCount: 1
   image:
     repository: sacunxt/normalizer-service
-    tag: 2.2.2
+    tag: 2.2.3
   service:
     type: ClusterIP
     port: 8004
@@ -326,7 +328,7 @@ publisherService:
   replicaCount: 1
   image:
     repository: sacunxt/publisher-service
-    tag: 2.2.5
+    tag: 2.2.7
   service:
     type: ClusterIP
     port: 8005
@@ -366,7 +368,7 @@ actionService:
   replicaCount: 1
   image:
     repository: sacunxt/action-service
-    tag: 2.1.0
+    tag: 2.1.1
   service:
     type: ClusterIP
     port: 8006
