@@ -81,6 +81,11 @@ spec:
             - name: postgresql
               containerPort: {{ .Values.postgresql.service.ports.postgresql }}
               protocol: TCP
+          args:
+            - "-c"
+            - "max_connections={{ .Values.postgresql.maxConnections | default 200 }}"
+            - "-c"
+            - "shared_buffers=256MB"
           env:
             - name: POSTGRES_USER
               value: {{ .Values.postgresql.auth.username | quote }}
