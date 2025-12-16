@@ -244,7 +244,7 @@ collectorService:
   replicaCount: 1
   image:
     repository: sacunxt/collector-service
-    tag: 2.2.5
+    tag: 2.2.6
   service:
     type: ClusterIP
     port: 8003
