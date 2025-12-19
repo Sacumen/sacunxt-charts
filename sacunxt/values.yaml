@@ -58,11 +58,17 @@ redis:
       size: 5Gi
     resources:
       requests:
-        memory: "512Mi"
+        memory: "1G1"
         cpu: "100m"
       limits:
-        memory: "1Gi"
+        memory: "3Gi"
         cpu: "200m"
+    # Redis configuration to prevent OOM during AOF rewrite
+    config:
+      maxmemory: "800mb"
+      maxmemoryPolicy: "allkeys-lru"
+      autoAofRewritePercentage: "100"
+      autoAofRewriteMinSize: "64mb"
   service:
     ports:
       redis: 6379
@@ -244,7 +250,7 @@ collectorService:
   replicaCount: 1
   image:
     repository: sacunxt/collector-service
-    tag: 2.2.7
+    tag: 2.2.8
   service:
     type: ClusterIP
     port: 8003
