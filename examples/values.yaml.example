@@ -288,7 +288,7 @@ normalizerService:
   replicaCount: 1
   image:
     repository: sacunxt/normalizer-service
-    tag: 2.2.3
+    tag: 2.2.4
   service:
     type: ClusterIP
     port: 8004
@@ -321,6 +321,7 @@ normalizerService:
     PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     MAX_PRODUCE_SIZE: "20971520"
     RAW_DATA_TOPIC: "source_data"
+    RAW_DATA_DLQ_TOPIC: "source_data_dlq"
     NORMALIZED_DATA_TOPIC: "normalized_data"
     STATUS_TOPIC: "service_status"
     LOG_LEVEL: "{{ .Values.global.logLevel }}"
@@ -330,7 +331,7 @@ publisherService:
   replicaCount: 1
   image:
     repository: sacunxt/publisher-service
-    tag: 2.2.7
+    tag: 2.2.8
   service:
     type: ClusterIP
     port: 8005
@@ -362,6 +363,7 @@ publisherService:
     CONSUMER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     NORMALIZED_DATA_TOPIC: "normalized_data"
+    NORMALIZED_DATA_DLQ_TOPIC: "normalized_data_dlq"
     STATUS_TOPIC: "service_status"
     LOG_LEVEL: "{{ .Values.global.logLevel }}"
 # Action Service configuration
