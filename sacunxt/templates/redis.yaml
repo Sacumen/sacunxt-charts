@@ -49,6 +49,14 @@ spec:
             - "yes"
             - --dir
             - /data
+            - --maxmemory
+            - {{ .Values.redis.master.config.maxmemory | default "800mb" | quote }}
+            - --maxmemory-policy
+            - {{ .Values.redis.master.config.maxmemoryPolicy | default "allkeys-lru" | quote }}
+            - --auto-aof-rewrite-percentage
+            - {{ .Values.redis.master.config.autoAofRewritePercentage | default "100" | quote }}
+            - --auto-aof-rewrite-min-size
+            - {{ .Values.redis.master.config.autoAofRewriteMinSize | default "64mb" | quote }}
           {{- else }}
           env:
             - name: REDIS_PASSWORD
