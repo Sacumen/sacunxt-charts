@@ -79,18 +79,15 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
 
-      - name: Checkout gh-pages branch
-        if: steps.check_release.outputs.exists == 'false'
-        uses: actions/checkout@v4
-        with:
-          ref: gh-pages
-          path: gh-pages
-        continue-on-error: true
-
-      - name: Create gh-pages branch if not exists
+      - name: Setup gh-pages branch
         if: steps.check_release.outputs.exists == 'false'
         run: |
-          if [ ! -d "gh-pages" ]; then
+          # Check if gh-pages branch exists
+          if git ls-remote --heads origin gh-pages | grep -q gh-pages; then
+            echo "gh-pages branch exists, cloning it"
+            git clone --single-branch --branch gh-pages https://x-access-token:${{ secrets.RELEASE_TOKEN }}@github.com/${{ github.repository }}.git gh-pages
+          else
+            echo "gh-pages branch does not exist, creating it"
             mkdir gh-pages
             cd gh-pages
             git init
@@ -104,6 +101,8 @@ jobs:
           cp .deploy/*.tgz gh-pages/
           cd gh-pages
           helm repo index . --url https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
           git add .
           git commit -m "Release ${{ steps.bump_version.outputs.version }}"
           git push origin gh-pages --force
