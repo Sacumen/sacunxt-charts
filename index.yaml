@@ -1,0 +1,32 @@
+apiVersion: v1
+entries:
+  sacunxt:
+  - annotations:
+      category: Application
+      licenses: Apache-2.0
+    apiVersion: v2
+    appVersion: 2.3.1
+    created: "2026-01-13T13:08:21.869184604Z"
+    description: A Helm chart for SacuNXT Connector Framework - Complete microservices
+      deployment
+    digest: 0af2d9d55d2b4f7fb46005d2133d9d9e90edeb51f786b7278d543b1a347ae63a
+    home: https://sacumen.com
+    icon: https://sacumen.com/media/images/Sacumen-Logo-500px.png
+    keywords:
+    - sacunxt
+    - connector
+    - microservices
+    - kafka
+    - postgresql
+    - redis
+    maintainers:
+    - email: suthan.natarajan@sacumen.com
+      name: Sacumen Team
+    name: sacunxt
+    sources:
+    - https://github.com/Sacumen/sacunxt-charts
+    type: application
+    urls:
+    - https://Sacumen.github.io/sacunxt-charts/sacunxt-2.3.1.tgz
+    version: 2.3.1
+generated: "2026-01-13T13:08:21.867735956Z"
