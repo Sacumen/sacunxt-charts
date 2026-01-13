@@ -1,0 +1,111 @@
+name: Release Charts
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    environment: production
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Bump chart version
+        id: bump_version
+        run: |
+          CURRENT_VERSION=$(grep '^version:' sacunxt/Chart.yaml | awk '{print $2}')
+          echo "Current version: $CURRENT_VERSION"
+          
+          # Parse version components
+          MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
+          MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
+          PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
+          
+          # Bump patch version
+          NEW_PATCH=$((PATCH + 1))
+          NEW_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
+          echo "New version: $NEW_VERSION"
+          
+          # Update Chart.yaml
+          sed -i "s/^version: .*/version: $NEW_VERSION/" sacunxt/Chart.yaml
+          sed -i "s/^appVersion: .*/appVersion: \"$NEW_VERSION\"/" sacunxt/Chart.yaml
+          
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Check if release exists
+        id: check_release
+        run: |
+          if gh release view ${{ steps.bump_version.outputs.version }} &>/dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+
+      - name: Commit version bump
+        if: steps.check_release.outputs.exists == 'false'
+        run: |
+          git add sacunxt/Chart.yaml
+          git commit -m "Bump version to ${{ steps.bump_version.outputs.version }}"
+          git push origin main
+
+      - name: Package Helm chart
+        if: steps.check_release.outputs.exists == 'false'
+        run: |
+          helm package sacunxt --destination .deploy
+
+      - name: Create GitHub Release
+        if: steps.check_release.outputs.exists == 'false'
+        run: |
+          gh release create ${{ steps.bump_version.outputs.version }} \
+            --title "${{ steps.bump_version.outputs.version }}" \
+            --generate-notes \
+            .deploy/*.tgz
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+
+      - name: Checkout gh-pages branch
+        if: steps.check_release.outputs.exists == 'false'
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+        continue-on-error: true
+
+      - name: Create gh-pages branch if not exists
+        if: steps.check_release.outputs.exists == 'false'
+        run: |
+          if [ ! -d "gh-pages" ]; then
+            mkdir gh-pages
+            cd gh-pages
+            git init
+            git checkout -b gh-pages
+            git remote add origin https://x-access-token:${{ secrets.RELEASE_TOKEN }}@github.com/${{ github.repository }}.git
+          fi
+
+      - name: Update Helm repo index
+        if: steps.check_release.outputs.exists == 'false'
+        run: |
+          cp .deploy/*.tgz gh-pages/
+          cd gh-pages
+          helm repo index . --url https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+          git add .
+          git commit -m "Release ${{ steps.bump_version.outputs.version }}"
+          git push origin gh-pages --force
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
