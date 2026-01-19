@@ -65,8 +65,8 @@ redis:
         cpu: "200m"
     # Redis configuration to prevent OOM during AOF rewrite
     config:
-      maxmemory: "800mb"
-      maxmemoryPolicy: "allkeys-lru"
+      maxmemory: "1.5gb"
+      maxmemoryPolicy: "noeviction"
       autoAofRewritePercentage: "100"
       autoAofRewriteMinSize: "64mb"
   service:
