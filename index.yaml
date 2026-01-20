@@ -5,8 +5,36 @@ entries:
       category: Application
       licenses: Apache-2.0
     apiVersion: v2
+    appVersion: 2.3.4
+    created: "2026-01-20T08:24:49.362104844Z"
+    description: A Helm chart for SacuNXT Connector Framework - Complete microservices
+      deployment
+    digest: e844084057fa9b37286b5031f28845fc53a0550968ad6cbe0bb5c7308d5bb054
+    home: https://sacumen.com
+    icon: https://sacumen.com/media/images/Sacumen-Logo-500px.png
+    keywords:
+    - sacunxt
+    - connector
+    - microservices
+    - kafka
+    - postgresql
+    - redis
+    maintainers:
+    - email: suthan.natarajan@sacumen.com
+      name: Sacumen Team
+    name: sacunxt
+    sources:
+    - https://github.com/Sacumen/sacunxt-charts
+    type: application
+    urls:
+    - https://Sacumen.github.io/sacunxt-charts/sacunxt-2.3.4.tgz
+    version: 2.3.4
+  - annotations:
+      category: Application
+      licenses: Apache-2.0
+    apiVersion: v2
     appVersion: 2.3.3
-    created: "2026-01-16T19:30:08.457501093Z"
+    created: "2026-01-20T08:24:49.360539827Z"
     description: A Helm chart for SacuNXT Connector Framework - Complete microservices
       deployment
     digest: 424bf99d16b026a763bc6afb6d8f5ddf0af257dd57a71ead07868182c5f4e140
@@ -34,7 +62,7 @@ entries:
       licenses: Apache-2.0
     apiVersion: v2
     appVersion: 2.3.2
-    created: "2026-01-16T19:30:08.456363902Z"
+    created: "2026-01-20T08:24:49.35938423Z"
     description: A Helm chart for SacuNXT Connector Framework - Complete microservices
       deployment
     digest: 32caaf287ebedf68ad9ab28cbabaf55b51aadfd5ec290a8bc75e927df6405ba4
@@ -62,7 +90,7 @@ entries:
       licenses: Apache-2.0
     apiVersion: v2
     appVersion: 2.3.1
-    created: "2026-01-16T19:30:08.455179534Z"
+    created: "2026-01-20T08:24:49.35812388Z"
     description: A Helm chart for SacuNXT Connector Framework - Complete microservices
       deployment
     digest: 0af2d9d55d2b4f7fb46005d2133d9d9e90edeb51f786b7278d543b1a347ae63a
@@ -85,4 +113,4 @@ entries:
     urls:
     - https://Sacumen.github.io/sacunxt-charts/sacunxt-2.3.1.tgz
     version: 2.3.1
-generated: "2026-01-16T19:30:08.453771678Z"
+generated: "2026-01-20T08:24:49.356666442Z"
