@@ -52,7 +52,7 @@ spec:
             - --maxmemory
             - {{ .Values.redis.master.config.maxmemory | default "800mb" | quote }}
             - --maxmemory-policy
-            - {{ .Values.redis.master.config.maxmemoryPolicy | default "allkeys-lru" | quote }}
+            - {{ .Values.redis.master.config.maxmemoryPolicy | default "noeviction" | quote }}
             - --auto-aof-rewrite-percentage
             - {{ .Values.redis.master.config.autoAofRewritePercentage | default "100" | quote }}
             - --auto-aof-rewrite-min-size
