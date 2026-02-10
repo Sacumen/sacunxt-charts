@@ -23,9 +23,12 @@ Create a default fully qualified app name.
 
 {{/*
 Create image pull secrets
+Only include imagePullSecrets if the secret name is set AND either:
+- createACRSecret is true (chart creates the secret), or
+- dockerConfigJson is provided (pre-existing secret data)
 */}}
 {{- define "sacunxt.imagePullSecrets" -}}
-{{- if .Values.global.imagePullSecrets }}
+{{- if and .Values.global.imagePullSecrets (or .Values.secrets.createACRSecret .Values.global.dockerConfigJson) }}
 imagePullSecrets:
   - name: {{ .Values.global.imagePullSecrets }}
 {{- end }}
