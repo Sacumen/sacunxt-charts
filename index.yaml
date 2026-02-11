@@ -5,8 +5,36 @@ entries:
       category: Application
       licenses: Apache-2.0
     apiVersion: v2
+    appVersion: 2.3.6
+    created: "2026-02-11T14:25:31.638270396Z"
+    description: A Helm chart for SacuNXT Connector Framework - Complete microservices
+      deployment
+    digest: 6665cacb73ce13bc7cd2aa7f8ed4a61c3ad1cae8fd06acd34fadd3b5d0b91609
+    home: https://sacumen.com
+    icon: https://sacumen.com/media/images/Sacumen-Logo-500px.png
+    keywords:
+    - sacunxt
+    - connector
+    - microservices
+    - kafka
+    - postgresql
+    - redis
+    maintainers:
+    - email: suthan.natarajan@sacumen.com
+      name: Sacumen Team
+    name: sacunxt
+    sources:
+    - https://github.com/Sacumen/sacunxt-charts
+    type: application
+    urls:
+    - https://Sacumen.github.io/sacunxt-charts/sacunxt-2.3.6.tgz
+    version: 2.3.6
+  - annotations:
+      category: Application
+      licenses: Apache-2.0
+    apiVersion: v2
     appVersion: 2.3.5
-    created: "2026-01-28T13:14:43.66216332Z"
+    created: "2026-02-11T14:25:31.637115932Z"
     description: A Helm chart for SacuNXT Connector Framework - Complete microservices
       deployment
     digest: fc4cfb58ff918abc324a255f6cc8aadc0b88cd2a9e0158c082120c30cb62cfec
@@ -34,7 +62,7 @@ entries:
       licenses: Apache-2.0
     apiVersion: v2
     appVersion: 2.3.4
-    created: "2026-01-28T13:14:43.660980228Z"
+    created: "2026-02-11T14:25:31.635930929Z"
     description: A Helm chart for SacuNXT Connector Framework - Complete microservices
       deployment
     digest: cabd9c74d24313073727d3625799d9d0be651777591c8cb640db6694e0560791
@@ -62,7 +90,7 @@ entries:
       licenses: Apache-2.0
     apiVersion: v2
     appVersion: 2.3.3
-    created: "2026-01-28T13:14:43.658804983Z"
+    created: "2026-02-11T14:25:31.633689278Z"
     description: A Helm chart for SacuNXT Connector Framework - Complete microservices
       deployment
     digest: 424bf99d16b026a763bc6afb6d8f5ddf0af257dd57a71ead07868182c5f4e140
@@ -90,7 +118,7 @@ entries:
       licenses: Apache-2.0
     apiVersion: v2
     appVersion: 2.3.2
-    created: "2026-01-28T13:14:43.657610599Z"
+    created: "2026-02-11T14:25:31.632545693Z"
     description: A Helm chart for SacuNXT Connector Framework - Complete microservices
       deployment
     digest: 32caaf287ebedf68ad9ab28cbabaf55b51aadfd5ec290a8bc75e927df6405ba4
@@ -118,7 +146,7 @@ entries:
       licenses: Apache-2.0
     apiVersion: v2
     appVersion: 2.3.1
-    created: "2026-01-28T13:14:43.656380939Z"
+    created: "2026-02-11T14:25:31.631253972Z"
     description: A Helm chart for SacuNXT Connector Framework - Complete microservices
       deployment
     digest: 0af2d9d55d2b4f7fb46005d2133d9d9e90edeb51f786b7278d543b1a347ae63a
@@ -141,4 +169,4 @@ entries:
     urls:
     - https://Sacumen.github.io/sacunxt-charts/sacunxt-2.3.1.tgz
     version: 2.3.1
-generated: "2026-01-28T13:14:43.654989828Z"
+generated: "2026-02-11T14:25:31.629855702Z"
