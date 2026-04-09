@@ -7,6 +7,7 @@ global:
   imagePullSecrets: "acr-secret"
   dockerConfigJson: ""
   logLevel: "DEBUG"  # Default log level for all services
+  kafkaBatchMaxBytes: "20971520"  # 20MB in bytes for Kafka batch size
 
 # Secrets configuration
 secrets:
@@ -79,6 +80,7 @@ kafka:
   serviceName: "kafka-service"
   deploymentName: "sacunxt-kafka"
   replicaCount: 1
+  kafkaBatchMaxBytes: "{{ .Values.global.kafkaBatchMaxBytes }}"
   zookeeper:
     enabled: true
     replicaCount: 1
@@ -129,7 +131,7 @@ apiService:
   replicaCount: 1
   image:
     repository: sacunxt/api-service
-    tag: 2.3.2
+    tag: 2.3.8
   service:
     type: ClusterIP
     port: 8000
@@ -166,7 +168,7 @@ schedulerService:
   enabled: true
   image:
     repository: sacunxt/scheduler-service
-    tag: 2.3.1
+    tag: 2.3.6
   service:
     type: ClusterIP
     port: 8002
@@ -210,7 +212,7 @@ configService:
   enabled: true
   image:
     repository: sacunxt/config-service
-    tag: 2.3.1
+    tag: 2.3.5
   service:
     type: ClusterIP
     port: 8001
@@ -250,7 +252,7 @@ collectorService:
   replicaCount: 1
   image:
     repository: sacunxt/collector-service
-    tag: 2.3.5
+    tag: 2.3.19
   service:
     type: ClusterIP
     port: 8003
@@ -281,7 +283,7 @@ collectorService:
     REDIS_PORT: "6379"
     CONSUMER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
-    MAX_PRODUCE_SIZE: "20971520"
+    MAX_PRODUCE_SIZE: "{{ .Values.global.kafkaBatchMaxBytes }}"
     RAW_DATA_TOPIC: "source_data"
     JOBS_TOPIC: "jobs"
     STATUS_TOPIC: "service_status"
@@ -292,7 +294,7 @@ normalizerService:
   replicaCount: 1
   image:
     repository: sacunxt/normalizer-service
-    tag: 2.3.2
+    tag: 2.3.10
   service:
     type: ClusterIP
     port: 8004
@@ -323,7 +325,7 @@ normalizerService:
     REDIS_PORT: "6379"
     CONSUMER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
     PRODUCER_CLUSTER: "kafka-service.kafka-system.svc.cluster.local:9092"
-    MAX_PRODUCE_SIZE: "20971520"
+    MAX_PRODUCE_SIZE: "{{ .Values.global.kafkaBatchMaxBytes }}"
     RAW_DATA_TOPIC: "source_data"
     RAW_DATA_DLQ_TOPIC: "source_data_dlq"
     NORMALIZED_DATA_TOPIC: "normalized_data"
@@ -335,7 +337,7 @@ publisherService:
   replicaCount: 1
   image:
     repository: sacunxt/publisher-service
-    tag: 2.3.3
+    tag: 2.3.12
   service:
     type: ClusterIP
     port: 8005
@@ -376,7 +378,7 @@ actionService:
   replicaCount: 1
   image:
     repository: sacunxt/action-service
-    tag: 2.3.0
+    tag: 2.3.1
   service:
     type: ClusterIP
     port: 8006
