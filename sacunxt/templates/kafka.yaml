@@ -78,7 +78,10 @@ spec:
             - --schema-registry-addr=0.0.0.0:8081
             - --rpc-addr=0.0.0.0:33145
             - --advertise-rpc-addr=kafka-service.kafka-system.svc.cluster.local:33145
-            - --kafka-batch-max-bytes={{ .Values.kafka.kafkaBatchMaxBytes }}
+            - --set
+            - redpanda.kafka_batch_max_bytes={{ tpl .Values.kafka.kafkaBatchMaxBytes . }}
+            - --set
+            - redpanda.kafka_request_max_bytes={{ tpl .Values.kafka.kafkaBatchMaxBytes . }}
             - --mode=dev-container
           resources:
             requests:
